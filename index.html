@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GAME ZONE GAMING – Best Gaming Cyber Cafe</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+<!-- ========== CURSOR ========== -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-trail" id="cursorTrail"></div>
+
+<!-- ========== PARTICLES ========== -->
+<canvas id="particles"></canvas>
+
+<!-- ========== HOME TAB WRAPPER ========== -->
+<div data-section="home">
+
+<!-- ========== HEADER ========== -->
+<header id="home">
+  <div class="header-bg"></div>
+  <div class="header-content">
+    <div class="logo-wrap">
+      <span class="logo-icon">⬡</span>
+      <div>
+        <h1 class="logo-title">GAME ZONE</h1>
+        <span class="logo-sub">G A M I N G</span>
+      </div>
+    </div>
+    <p class="header-tagline">Best Gaming Cyber Cafe · Level Up Your Experience</p>
+    <div class="header-stats">
+      <div class="stat"><span class="stat-num">12+</span><span class="stat-label">Gaming PCs</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">50+</span><span class="stat-label">Games</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">24/7</span><span class="stat-label">Open</span></div>
+    </div>
+    <div class="header-btns">
+      <a href="#booking" class="btn-hero" id="bookPcBtn">BOOK A PC NOW</a>
+      <button class="btn-hero-secondary" id="heroLoginBtn" onclick="openAuth()">👤 LOGIN</button>
+    </div>
+  </div>
+  <div class="header-scanline"></div>
+</header>
+
+<!-- ========== NAV ========== -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <span class="nav-brand">⬡ GZG</span>
+    <div class="nav-links">
+      <a href="#home">Home</a>
+      <a href="#booking">Booking</a>
+      <a href="#prices">Prices</a>
+      <a href="#offers">Offers</a>
+      <a href="#games">Games</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <div class="nav-tabs" id="navTabs">
+      <button class="tab-nav active" data-tab="home">Home</button>
+      <button class="tab-nav" data-tab="games">Games</button>
+      <button class="tab-nav" data-tab="pcs">PCs</button>
+      <button class="tab-nav" data-tab="booking">Booking</button>
+    </div>
+    <div class="nav-user-wrap" id="navUserWrap">
+      <div class="user-menu" id="userMenu">
+        <div class="avatar-wrap">
+          <img id="userAvatar" class="user-avatar" src="" alt="avatar" onclick="openAvatarLightbox()"/>
+          <span class="avatar-edit" onclick="openUploadAvatar()">📷</span>
+        </div>
+        <button class="dropdown-toggle-btn" onclick="toggleUserDropdown()" aria-label="Menu">▾</button>
+        <span class="user-badge coin-badge"><span class="coin-icon"></span> <span id="inlineBalance">0</span></span>
+        <span class="user-badge star-badge"><span class="star-icon"></span> <span id="inlinePoints">0</span></span>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="dropdown-header"><span id="dropdownName">User</span></div>
+          <div class="dropdown-stats">
+            <span>🪙 <span id="dropdownBalance">0</span></span>
+            <span>⭐ <span id="dropdownPoints">0</span></span>
+          </div>
+          <button onclick="openConvertPoints()">⭐ Convert Points</button>
+          <button onclick="openChangePassword()">🔑 Change Password</button>
+          <button onclick="openUploadAvatar()">🖼️ Change Photo</button>
+          <button onclick="switchAccount()">🔄 Switch Account</button>
+          <button onclick="handleLogout()">🚪 Logout</button>
+          <button onclick="handleDeleteAccount()" class="dropdown-danger">🗑️ Delete Account</button>
+        </div>
+      </div>
+    </div>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu">☰</button>
+  </div>
+  <div class="nav-mobile" id="navMobile">
+    <a href="#home">Home</a>
+    <a href="#booking">Booking</a>
+    <a href="#prices">Prices</a>
+    <a href="#offers">Offers</a>
+    <a href="#games">Games</a>
+    <a href="#contact">Contact</a>
+  </div>
+</nav>
+
+<!-- ========== FEATURES ========== -->
+<section class="features-section reveal">
+  <div class="section-label">WHY CHOOSE US</div>
+  <h2 class="section-title">Built for <span class="glow-text">Champions</span></h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🖥️</div>
+      <h3>Powerful Gaming PCs</h3>
+      <p>RTX 4080 · Intel i9 · 32GB RAM · 240Hz monitors for the smoothest gameplay.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎮</div>
+      <h3>Latest Games</h3>
+      <p>50+ titles — online, offline story, LAN, and simulation. Always updated.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏆</div>
+      <h3>Tournaments & Events</h3>
+      <p>Weekly competitions with prizes. Join the community and prove your skills.</p>
+    </div>
+  </div>
+</section>
+
+</div><!-- /home -->
+
+<!-- ========== BOOKING ========== -->
+<section class="section reveal" id="booking" data-section="booking">
+  <div class="section-label">RESERVE YOUR SPOT</div>
+  <h2 class="section-title">Book a <span class="glow-text">PC</span></h2>
+  <div class="occupied-bar">
+    <span class="occupied-label">🟢 Live Status</span>
+    <div class="occupied-pcs" id="occupiedPCs"></div>
+  </div>
+  <div class="booking-wrap">
+      <form class="booking-form" onsubmit="submitBooking(event)">
+      <div class="form-row" id="bookingNameRow">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="bookingName" placeholder="Your name" required/>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="bookingPhone" placeholder="01XXXXXXXXX" required/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label>Select PC(s)</label>
+          <div class="pc-grid" id="pcGrid">
+            <div class="pc-group-label">Standard</div>
+            <label class="pc-chip"><input type="checkbox" value="PC 1"/> PC 1</label>
+            <label class="pc-chip"><input type="checkbox" value="PC 2"/> PC 2</label>
+            <label class="pc-chip"><input type="checkbox" value="PC 3"/> PC 3</label>
+            <label class="pc-chip"><input type="checkbox" value="PC 4"/> PC 4</label>
+            <label class="pc-chip"><input type="checkbox" value="PC 7"/> PC 7</label>
+            <label class="pc-chip"><input type="checkbox" value="PC 8"/> PC 8</label>
+            <label class="pc-chip"><input type="checkbox" value="PC 9"/> PC 9</label>
+            <label class="pc-chip"><input type="checkbox" value="PC 10"/> PC 10</label>
+            <label class="pc-chip"><input type="checkbox" value="PC 11"/> PC 11</label>
+            <label class="pc-chip"><input type="checkbox" value="PC 12"/> PC 12</label>
+            <div class="pc-group-label vip">VIP 👑</div>
+            <label class="pc-chip vip"><input type="checkbox" value="VIP 1"/> VIP 1</label>
+            <label class="pc-chip vip"><input type="checkbox" value="VIP 2"/> VIP 2</label>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Duration</label>
+          <select id="durationSelect" onchange="onDurationChange()">
+            <option value="" disabled selected>Choose duration</option>
+            <option value="30">30 Minutes</option>
+            <option value="60">1 Hour</option>
+            <option value="120">2 Hours</option>
+            <option value="180">3 Hours</option>
+            <option value="1440">Unlimited Session</option>
+            <option value="custom">Custom (minutes)</option>
+          </select>
+          <input type="number" id="durationCustom" min="1" max="1440" placeholder="Minutes" style="display:none;margin-top:6px;"/>
+        </div>
+        <div class="form-group">
+          <label>Add-ons</label>
+          <select>
+            <option>None</option>
+            <option>Steering Wheel 🎡</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" required/>
+        </div>
+        <div class="form-group">
+          <label>Time <span class="live-time-label" id="liveTimeLabel"></span></label>
+          <input type="time" id="bookingTime" required/>
+          <div id="conflictInfo" class="conflict-info"></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group deposit-note">
+          <div class="deposit-badge">
+            <span class="deposit-icon">💰</span>
+            <div>
+              <strong>Deposit Required</strong>
+              <span>50 EGP to confirm your booking</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn-submit">⚡ CONFIRM BOOKING</button>
+    </form>
+  </div>
+</section>
+
+<!-- ========== PRICES ========== -->
+<section class="section reveal" id="prices" data-section="pcs">
+  <div class="section-label">TRANSPARENT PRICING</div>
+  <h2 class="section-title">Our <span class="glow-text">Rates</span></h2>
+  <div class="prices-grid">
+
+    <div class="price-card">
+      <div class="price-card-header">
+        <span class="price-type-icon">🖥️</span>
+        <h3>Standard PC</h3>
+      </div>
+      <div class="price-items">
+        <div class="price-row">
+          <span>30 Minutes</span>
+          <span class="price-val">15 <small>EGP</small></span>
+        </div>
+        <div class="price-row featured">
+          <span>1 Hour</span>
+          <span class="price-val">30 <small>EGP</small></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="price-card vip">
+      <div class="vip-crown">👑 VIP</div>
+      <div class="price-card-header">
+        <span class="price-type-icon">💎</span>
+        <h3>VIP PC</h3>
+      </div>
+      <div class="price-items">
+        <div class="price-row">
+          <span>30 Minutes</span>
+          <span class="price-val">20 <small>EGP</small></span>
+        </div>
+        <div class="price-row featured">
+          <span>1 Hour</span>
+          <span class="price-val">40 <small>EGP</small></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="price-card addons">
+      <div class="price-card-header">
+        <span class="price-type-icon">🎡</span>
+        <h3>Add-ons</h3>
+      </div>
+      <div class="price-items">
+        <div class="price-row">
+          <span>Steering Wheel</span>
+          <span class="price-val">+50 <small>EGP</small></span>
+        </div>
+        <div class="price-row">
+          <span>VIP Steering Wheel</span>
+          <span class="price-val">+60 <small>EGP</small></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== OFFERS ========== -->
+<section class="section reveal" id="offers" data-section="pcs">
+  <div class="section-label">EXCLUSIVE DEALS</div>
+  <h2 class="section-title">Membership <span class="glow-text">Offers</span></h2>
+  <div class="offers-grid">
+    <div class="offer-card">
+      <div class="offer-badge bronze-badge">BRONZE</div>
+      <div class="offer-amount">250 <span>EGP</span></div>
+      <div class="offer-desc">Load 250 EGP membership</div>
+      <div class="offer-bonus">
+        <span class="bonus-label">FREE BONUS</span>
+        <span class="bonus-val">+30 EGP</span>
+      </div>
+      <div class="offer-total">Total Value: <strong>280 EGP</strong></div>
+      <a href="javascript:void(0)" class="btn-offer bronze-btn membership-btn" data-tier="BRONZE" data-amount="280" onclick="requestMembership(this)">GET THIS DEAL</a>
+    </div>
+    <div class="offer-card silver">
+      <div class="offer-badge silver-badge">SILVER ⭐</div>
+      <div class="offer-amount">500 <span>EGP</span></div>
+      <div class="offer-desc">Load 500 EGP membership</div>
+      <div class="offer-bonus">
+        <span class="bonus-label">FREE BONUS</span>
+        <span class="bonus-val">+90 EGP</span>
+      </div>
+      <div class="offer-total">Total Value: <strong>590 EGP</strong></div>
+      <a href="javascript:void(0)" class="btn-offer silver-btn membership-btn" data-tier="SILVER" data-amount="590" onclick="requestMembership(this)">GET THIS DEAL</a>
+    </div>
+    <div class="offer-card gold">
+      <div class="offer-badge gold-badge">GOLD ⭐</div>
+      <div class="offer-amount">1,000 <span>EGP</span></div>
+      <div class="offer-desc">Load 1,000 EGP membership</div>
+      <div class="offer-bonus">
+        <span class="bonus-label">FREE BONUS</span>
+        <span class="bonus-val">+240 EGP</span>
+      </div>
+      <div class="offer-total">Total Value: <strong>1,240 EGP</strong></div>
+      <a href="javascript:void(0)" class="btn-offer gold-btn membership-btn" data-tier="GOLD" data-amount="1240" onclick="requestMembership(this)">GET THIS DEAL</a>
+    </div>
+    <div class="offer-card diamond">
+      <div class="offer-badge diamond-badge">DIAMOND 💎</div>
+      <div class="offer-amount">2,000 <span>EGP</span></div>
+      <div class="offer-desc">Load 2,000 EGP membership</div>
+      <div class="offer-bonus">
+        <span class="bonus-label">FREE BONUS</span>
+        <span class="bonus-val">+600 EGP</span>
+      </div>
+      <div class="offer-total">Total Value: <strong>2,600 EGP</strong></div>
+      <a href="javascript:void(0)" class="btn-offer diamond-btn membership-btn" data-tier="DIAMOND" data-amount="2600" onclick="requestMembership(this)">GET THIS DEAL</a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== GAMES ========== -->
+<section class="section reveal" id="games" data-section="games">
+  <div class="section-label">OUR LIBRARY</div>
+  <h2 class="section-title">Available <span class="glow-text">Games</span></h2>
+
+  <div class="games-tabs" id="gameTabs">
+    <button class="tab-btn active" data-tab="online">🌐 Online</button>
+    <button class="tab-btn" data-tab="offline">📖 Story</button>
+    <button class="tab-btn" data-tab="lan">🔗 LAN</button>
+    <button class="tab-btn" data-tab="sim">🚗 Simulation</button>
+  </div>
+
+  <div class="tab-content active" id="tab-online">
+    <div class="games-grid">
+      <div class="game-card"><span class="game-icon">⚔️</span>Marvel Rivals</div>
+      <div class="game-card"><span class="game-icon">🔫</span>PUBG MOBILE</div>
+      <div class="game-card"><span class="game-icon">🪖</span>Call of Duty</div>
+      <div class="game-card"><span class="game-icon">🚗</span>Rocket League</div>
+      <div class="game-card"><span class="game-icon">🎯</span>VALORANT</div>
+      <div class="game-card"><span class="game-icon">🦅</span>Apex Legends</div>
+      <div class="game-card"><span class="game-icon">🔫</span>Rainbow Six Siege</div>
+      <div class="game-card"><span class="game-icon">🔥</span>Free Fire</div>
+      <div class="game-card"><span class="game-icon">🦸</span>Overwatch 2</div>
+      <div class="game-card"><span class="game-icon">🫘</span>Fall Guys</div>
+      <div class="game-card"><span class="game-icon">🏆</span>League of Legends</div>
+      <div class="game-card"><span class="game-icon">💥</span>Counter-Strike 2</div>
+      <div class="game-card"><span class="game-icon">🤼</span>Brawlhalla</div>
+      <div class="game-card"><span class="game-icon">🌀</span>Fortnite</div>
+      <div class="game-card"><span class="game-icon">🐉</span>Dota 2</div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-offline">
+    <div class="games-grid">
+      <div class="game-card"><span class="game-icon">⚔️</span>Ghost of Tsushima</div>
+      <div class="game-card"><span class="game-icon">⚡</span>God of War</div>
+      <div class="game-card"><span class="game-icon">🕷️</span>Spider-Man 2</div>
+      <div class="game-card"><span class="game-icon">🕷️</span>Spider-Man Remastered</div>
+      <div class="game-card"><span class="game-icon">🕷️</span>Miles Morales</div>
+      <div class="game-card"><span class="game-icon">🤖</span>Detroit: Become Human</div>
+      <div class="game-card"><span class="game-icon">🧟</span>The Last of Us Part I</div>
+      <div class="game-card"><span class="game-icon">🗡️</span>Assassin's Creed Mirage</div>
+      <div class="game-card"><span class="game-icon">🗡️</span>Assassin's Creed Valhalla</div>
+      <div class="game-card"><span class="game-icon">🗡️</span>Assassin's Creed Odyssey</div>
+      <div class="game-card"><span class="game-icon">🌴</span>Far Cry 3</div>
+      <div class="game-card"><span class="game-icon">🌴</span>Far Cry 4</div>
+      <div class="game-card"><span class="game-icon">🌴</span>Far Cry 5</div>
+      <div class="game-card"><span class="game-icon">🌴</span>Far Cry 6</div>
+      <div class="game-card"><span class="game-icon">🗡️</span>Sekiro: Shadows Die Twice</div>
+      <div class="game-card"><span class="game-icon">👻</span>The Mortuary Assistant</div>
+      <div class="game-card"><span class="game-icon">🎯</span>Hitman 3</div>
+      <div class="game-card"><span class="game-icon">🔫</span>Mafia II</div>
+      <div class="game-card"><span class="game-icon">🧟</span>Resident Evil 7 / 4 Remake</div>
+      <div class="game-card"><span class="game-icon">🧟</span>Resident Evil Village</div>
+      <div class="game-card"><span class="game-icon">🏴‍☠️</span>Uncharted 4</div>
+      <div class="game-card"><span class="game-icon">🌆</span>GTA San Andreas</div>
+      <div class="game-card"><span class="game-icon">🌆</span>GTA Vice City</div>
+      <div class="game-card"><span class="game-icon">🌆</span>GTA V</div>
+      <div class="game-card"><span class="game-icon">🔍</span>Watch Dogs</div>
+      <div class="game-card"><span class="game-icon">🔍</span>Watch Dogs 2</div>
+      <div class="game-card"><span class="game-icon">🏚️</span>Outlast</div>
+      <div class="game-card"><span class="game-icon">🏚️</span>Outlast 2</div>
+      <div class="game-card"><span class="game-icon">👵</span>Granny 1</div>
+      <div class="game-card"><span class="game-icon">👵</span>Granny 2</div>
+      <div class="game-card"><span class="game-icon">👵</span>Granny 3</div>
+      <div class="game-card"><span class="game-icon">🤠</span>Red Dead Redemption 2</div>
+      <div class="game-card"><span class="game-icon">🧸</span>Poppy Playtime</div>
+      <div class="game-card"><span class="game-icon">🤼</span>WWE 2K</div>
+      <div class="game-card"><span class="game-icon">⚔️</span>TABS</div>
+      <div class="game-card"><span class="game-icon">🐺</span>The Witcher 3: Wild Hunt</div>
+      <div class="game-card"><span class="game-icon">👻</span>Visage</div>
+      <div class="game-card"><span class="game-icon">💣</span>Battlefield V</div>
+      <div class="game-card"><span class="game-icon">🧟</span>Dying Light</div>
+      <div class="game-card"><span class="game-icon">🗡️</span>Elden Ring</div>
+      <div class="game-card"><span class="game-icon">⚔️</span>Devil May Cry 5</div>
+      <div class="game-card"><span class="game-icon">🧙</span>Hogwarts Legacy</div>
+      <div class="game-card"><span class="game-icon">🦇</span>LEGO Batman</div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-lan">
+    <div class="games-grid">
+      <div class="game-card"><span class="game-icon">💣</span>Counter-Strike 1.6</div>
+      <div class="game-card"><span class="game-icon">🏎️</span>Blur</div>
+      <div class="game-card"><span class="game-icon">🪖</span>Call of Duty: Black Ops II</div>
+      <div class="game-card"><span class="game-icon">🚀</span>Among Us</div>
+      <div class="game-card"><span class="game-icon">⚔️</span>Stick Fight: The Game</div>
+      <div class="game-card"><span class="game-icon">🐔</span>Gang Beasts</div>
+      <div class="game-card"><span class="game-icon">👻</span>Phasmophobia</div>
+      <div class="game-card"><span class="game-icon">⛏️</span>Minecraft</div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-sim">
+    <div class="games-grid">
+      <div class="game-card"><span class="game-icon">🏁</span>Assetto Corsa</div>
+      <div class="game-card"><span class="game-icon">🏎️</span>Forza Horizon</div>
+      <div class="game-card"><span class="game-icon">🚗</span>Need for Speed</div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ========== CONTACT ========== -->
+<section class="section reveal" id="contact" data-section="contact">
+  <div class="section-label">GET IN TOUCH</div>
+  <h2 class="section-title">Find <span class="glow-text">Us</span></h2>
+  <div class="contact-grid">
+    <div class="contact-card">
+      <a href="tel:01055886624" class="contact-item">
+        <span class="contact-icon">📞</span>
+        <div>
+          <strong>Phone / WhatsApp</strong>
+          <span>01055886624</span>
+        </div>
+      </a>
+      <a href="https://instagram.com/_game__zone___" target="_blank" class="contact-item">
+        <span class="contact-icon">📸</span>
+        <div>
+          <strong>Instagram</strong>
+          <span>@_game__zone___</span>
+        </div>
+      </a>
+      <a href="https://tiktok.com/@game_zone385" target="_blank" class="contact-item">
+        <span class="contact-icon">🎵</span>
+        <div>
+          <strong>TikTok</strong>
+          <span>@game_zone385</span>
+        </div>
+      </a>
+      <div class="contact-item no-link">
+        <span class="contact-icon">🕐</span>
+        <div>
+          <strong>Working Hours</strong>
+          <span>Open 24/7 — Every Day</span>
+        </div>
+      </div>
+    </div>
+    <div class="map-wrap">
+      <span class="map-mobile-label">📍 الموقع</span>
+      <a href="https://maps.app.goo.gl/gUco5M9C8Nh6hTPf7?g_st=ac" target="_blank" class="map-link">
+        <img src="1.png" alt="Game Zone Location" style="width:100%;height:100%;object-fit:cover;display:block;"/>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<footer>
+  <div class="footer-logo">⬡ GAME ZONE GAMING</div>
+  <p class="footer-text">Best Gaming Cyber Cafe · Level Up Your Experience</p>
+  <div class="footer-links">
+    <a href="#home">Home</a>
+    <a href="#booking">Booking</a>
+    <a href="#prices">Prices</a>
+    <a href="#games">Games</a>
+    <a href="#contact">Contact</a>
+  </div>
+  <p class="footer-copy">© 2025 Game Zone Gaming. All rights reserved.</p>
+  <div class="admin-footer-link" style="margin-top:16px;opacity:0.25;font-size:11px;">
+    <a href="admin.html" style="color:#fff;text-decoration:none;letter-spacing:1px;">⬡ ADMIN</a>
+  </div>
+</footer>
+
+<!-- ========== TOAST ========== -->
+<div class="toast" id="toast">⚡ Booking submitted! We'll confirm shortly.</div>
+
+<!-- ========== LOGIN / REGISTER MODAL ========== -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAuth()">✕</button>
+    <h2 class="modal-title" id="authTitle">Login</h2>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="loginTab" onclick="switchAuth('login')">Login</button>
+      <button class="auth-tab" id="registerTab" onclick="switchAuth('register')">Register</button>
+    </div>
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <input type="tel" id="loginPhone" placeholder="Phone Number" required/>
+      <input type="password" id="loginPassword" placeholder="Password" required/>
+      <button type="submit" class="btn-auth">LOGIN</button>
+      <div class="auth-error" id="loginError"></div>
+    </form>
+    <form id="registerForm" onsubmit="handleRegister(event)" style="display:none">
+      <input type="text" id="regName" placeholder="Full Name" required/>
+      <input type="tel" id="regPhone" placeholder="Phone Number" required/>
+      <input type="password" id="regPassword" placeholder="Password" required/>
+      <button type="submit" class="btn-auth">REGISTER</button>
+      <div class="auth-error" id="regError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ========== CHANGE PASSWORD MODAL ========== -->
+<div class="modal-overlay" id="passwordModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closePasswordModal()">✕</button>
+    <h2 class="modal-title">Change Password</h2>
+    <form onsubmit="changePassword(event)">
+      <input type="password" id="newPassword" placeholder="New Password" required/>
+      <input type="password" id="confirmPassword" placeholder="Confirm Password" required/>
+      <button type="submit" class="btn-auth">SAVE</button>
+      <div class="auth-error" id="passwordError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ========== CONVERT POINTS MODAL ========== -->
+<div class="modal-overlay" id="convertModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeConvertModal()">✕</button>
+    <h2 class="modal-title">⭐ Convert Points</h2>
+    <p style="color:#888;font-size:13px;text-align:center;margin-bottom:12px;">10 Points = 1 EGP</p>
+    <p style="color:#aaa;font-size:13px;text-align:center;margin-bottom:16px;">You have <span id="convertPointsDisplay">0</span> points</p>
+    <form onsubmit="convertPoints(event)">
+      <input type="number" id="convertAmount" min="10" placeholder="Points to convert (min 10)" required oninput="document.getElementById('convertEgpDisplay').textContent=Math.floor((parseInt(this.value)||0)/10)"/>
+      <p style="color:#666;font-size:12px;text-align:center;margin:6px 0 12px;">You will get <span id="convertEgpDisplay">0</span> EGP</p>
+      <button type="submit" class="btn-auth">CONVERT</button>
+      <div class="auth-error" id="convertError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ========== AVATAR UPLOAD MODAL ========== -->
+<div class="modal-overlay" id="avatarModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAvatarModal()">✕</button>
+    <h2 class="modal-title">Upload Photo</h2>
+    <form onsubmit="uploadAvatar(event)">
+      <input type="file" id="avatarInput" accept="image/*" required/>
+      <button type="submit" class="btn-auth">UPLOAD</button>
+      <div class="auth-error" id="avatarError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="avatarLightbox" onclick="closeAvatarLightbox()">
+  <img id="avatarLightboxImg" src="" alt=""/>
+</div>
+
+<script src="script.js"></script>
+<script>
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('copy', e => e.preventDefault());
+document.addEventListener('cut', e => e.preventDefault());
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && ['c','C','x','X','u','U','s','S','p','P'].includes(e.key)) e.preventDefault();
+  if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','i','J','j','C','c'].includes(e.key))) e.preventDefault();
+});
+// anti-devtools
+setInterval(() => {
+  const d = document.createElement('div');
+  Object.defineProperty(d, 'id', { get: () => { location.reload(); } });
+  console.log('%c', d);
+}, 1000);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+</script>
+</body>
+</html>

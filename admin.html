@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin – Game Zone Gaming</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --purple: #6a00ff;
+      --red: #ff003c;
+      --pink: #ff4d6d;
+      --dark: #000;
+      --dark2: #0b0010;
+      --glass: rgba(255,255,255,0.04);
+      --glass-border: rgba(255,255,255,0.08);
+      --glow-both: 0 0 20px #6a00ff66, 0 0 40px #ff003c44;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+    input { -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text; }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: var(--dark);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .login-box {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 48px 36px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+    .login-box h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: 24px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, var(--purple), var(--red));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .login-box p {
+      color: rgba(255,255,255,0.4);
+      font-size: 13px;
+      margin-bottom: 28px;
+    }
+    .login-box input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: #fff;
+      font-family: 'Cairo', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: 0.3s;
+      margin-bottom: 14px;
+    }
+    .login-box input:focus {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 2px rgba(106,0,255,0.25);
+    }
+    .login-box button {
+      width: 100%;
+      padding: 14px;
+      font-family: 'Orbitron', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #fff;
+      background: linear-gradient(90deg, var(--purple), var(--red));
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: var(--glow-both);
+    }
+    .login-box button:hover { transform: scale(1.02); }
+    .login-error {
+      color: var(--red);
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+    .admin-panel { display: none; width: 100%; max-width: 1100px; }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .admin-header h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: 22px;
+      font-weight: 900;
+      background: linear-gradient(90deg, var(--purple), var(--red));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .admin-header .badge {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 6px 16px;
+    }
+    .btn-logout {
+      font-family: 'Orbitron', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--red);
+      background: none;
+      border: 1px solid rgba(255,0,60,0.3);
+      border-radius: 8px;
+      padding: 8px 20px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .btn-logout:hover {
+      background: rgba(255,0,60,0.1);
+      border-color: var(--red);
+    }
+    .live-clock {
+      font-family: 'Orbitron', monospace;
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+    .pc-monitor {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .pc-monitor-title {
+      width: 100%;
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 4px;
+    }
+    .pc-monitor-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: 0.2s;
+    }
+    .pc-monitor-item .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .pc-monitor-item .dot.free { background: #00ff64; box-shadow: 0 0 8px #00ff64; }
+    .pc-monitor-item .dot.busy { background: var(--red); box-shadow: 0 0 8px var(--red); animation: blink 1s infinite; }
+    .pc-monitor-item .dot.upcoming { background: #ffc107; box-shadow: 0 0 8px #ffc107; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .pc-monitor-item .pc-time { font-size: 10px; color: rgba(255,255,255,0.35); font-weight: 400; }
+    .pc-monitor-item .upcoming-text { color: #ffc107; }
+    .pc-date-picker {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .pc-date-picker label {
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.4);
+    }
+    .pc-date-picker input {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #fff;
+      font-family: 'Cairo', sans-serif;
+      font-size: 13px;
+      outline: none;
+    }
+    .manual-control {
+      background: #111;
+      border: 1px solid #6a00ff;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 12px 0;
+    }
+    .manual-title {
+      color: #6a00ff;
+      font-family: 'Orbitron', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .manual-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .manual-row select,
+    .manual-row input {
+      background: #000;
+      border: 1px solid #6a00ff;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 13px;
+    }
+    .manual-row input { flex: 1; min-width: 150px; }
+    .btn-manual-busy, .btn-manual-free {
+      border: none;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+    }
+    .btn-manual-busy { background: #ff003c; color: #fff; }
+    .btn-manual-free { background: #00cc66; color: #000; }
+    .btn-manual-busy:hover { background: #cc002e; }
+    .btn-manual-free:hover { background: #00aa55; }
+    .manual-pcs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .manual-pc-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #000;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: 'Cairo', sans-serif;
+      transition: 0.15s;
+    }
+    .manual-pc-item.selected {
+      border-color: #6a00ff;
+      background: rgba(106,0,255,0.15);
+    }
+    .manual-pc-item input { display: none; }
+    .manual-toggle-all {
+      background: none;
+      border: 1px solid #333;
+      color: #888;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: 'Orbitron', monospace;
+      cursor: pointer;
+    }
+    .manual-toggle-all:hover { border-color: #6a00ff; color: #fff; }
+    .admin-section-title {
+      color: #6a00ff;
+      font-family: 'Orbitron', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+    .table-wrap {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      overflow-x: auto;
+      padding: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 750px;
+    }
+    th {
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      padding: 16px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    td {
+      padding: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.8);
+    }
+    tr:hover td { background: rgba(106,0,255,0.06); }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255,255,255,0.3);
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+    .btn-delete {
+      background: none;
+      border: 1px solid rgba(255,0,60,0.3);
+      color: var(--red);
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: 'Cairo', sans-serif;
+      transition: 0.2s;
+    }
+    .btn-delete:hover {
+      background: rgba(255,0,60,0.15);
+      border-color: var(--red);
+    }
+    .btn-edit-bal,
+    .btn-edit-pts {
+      background: none;
+      border: none;
+      color: #6a00ff;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 4px;
+    }
+    .btn-edit-bal:hover,
+    .btn-edit-pts:hover { color: #fff; }
+    .btn-view {
+      background: none;
+      border: 1px solid rgba(106,0,255,0.3);
+      color: #6a00ff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: 0.2s;
+    }
+    .btn-view:hover { background: rgba(106,0,255,0.15); border-color: #6a00ff; }
+    .filter-btn {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.4);
+      padding: 4px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 11px;
+      font-family: 'Cairo', sans-serif;
+      transition: 0.2s;
+    }
+    .filter-btn:hover { border-color: #6a00ff; color: #fff; }
+    .filter-btn.active { background: rgba(106,0,255,0.2); border-color: #6a00ff; color: #fff; }
+    .conflict-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+    .conflict-badge.ok { background: rgba(0,255,100,0.12); color: #00ff64; border: 1px solid rgba(0,255,100,0.25); }
+    .conflict-badge.warn { background: rgba(255,165,0,0.12); color: #ffa500; border: 1px solid rgba(255,165,0,0.25); }
+    .btn-free {
+      background: none;
+      border: 1px solid rgba(0,255,100,0.3);
+      color: #00ff64;
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: 'Cairo', sans-serif;
+      transition: 0.2s;
+    }
+    .btn-free:hover { background: rgba(0,255,100,0.15); border-color: #00ff64; }
+    .btn-start {
+      background: none;
+      border: 1px solid rgba(255,165,0,0.3);
+      color: #ffa500;
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: 'Cairo', sans-serif;
+      transition: 0.2s;
+    }
+    .btn-start:hover { background: rgba(255,165,0,0.15); border-color: #ffa500; }
+    @media (max-width: 768px) {
+      body { padding: 12px; }
+      .login-box { padding: 32px 20px; }
+      td, th { padding: 10px 8px; font-size: 12px; }
+    }
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(6px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: #111;
+      border: 1px solid #6a00ff;
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 420px;
+      width: 100%;
+      position: relative;
+      animation: modalIn 0.2s ease;
+    }
+    @keyframes modalIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-close {
+      position: absolute;
+      top: 12px; right: 16px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.4);
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .modal-close:hover { color: #fff; }
+    .modal-avatar {
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #6a00ff;
+      cursor: pointer;
+      display: block;
+      margin: 0 auto 16px;
+      transition: 0.2s;
+    }
+    .modal-avatar:hover { filter: brightness(1.3); }
+    .modal-info { text-align: center; }
+    .modal-info h2 { font-family: 'Orbitron', monospace; font-size: 20px; margin-bottom: 4px; }
+    .modal-info .phone { color: rgba(255,255,255,0.4); font-size: 14px; margin-bottom: 16px; }
+    .modal-info .row { display: flex; justify-content: center; gap: 24px; margin-bottom: 12px; }
+    .modal-info .row span { font-size: 14px; }
+    .modal-info .label { color: rgba(255,255,255,0.3); font-size: 11px; font-family: 'Orbitron', monospace; letter-spacing: 1px; text-transform: uppercase; }
+    .modal-info .muted { color: rgba(255,255,255,0.4); font-size: 12px; }
+    .modal-tier { display: inline-block; margin-top: 8px; padding: 4px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; font-family: 'Orbitron', monospace; }
+    /* Lightbox */
+    .lightbox {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 99999;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .lightbox.show { display: flex; }
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 16px;
+      border: 3px solid #6a00ff;
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-box" id="loginBox">
+  <h1>⬡ ADMIN</h1>
+  <p>Game Zone — Dashboard</p>
+  <input type="text" id="username" placeholder="Username" autocomplete="off"/>
+  <input type="password" id="password" placeholder="Password"/>
+  <button onclick="handleLogin()">LOGIN</button>
+  <div class="login-error" id="loginError">Wrong username or password</div>
+</div>
+
+<div class="admin-panel" id="adminPanel">
+  <div class="admin-header">
+    <div>
+      <h1>⬡ Bookings</h1>
+      <span class="badge" id="bookingCount">0 requests</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <span class="live-clock" id="liveClock"></span>
+      <button class="btn-logout" onclick="handleLogout()">LOGOUT</button>
+    </div>
+  </div>
+
+  <div class="pc-date-picker">
+    <label>📅 Date</label>
+    <input type="date" id="monitorDate" onchange="renderMonitor()"/>
+  </div>
+
+  <div class="pc-monitor" id="pcMonitor">
+    <div class="pc-monitor-title">🖥️ PC STATUS</div>
+  </div>
+
+  <!-- Manual PC Control -->
+  <div class="manual-control">
+    <div class="manual-title">⚡ Manual Control</div>
+    <div class="manual-row">
+      <input type="text" id="manualName" placeholder="Customer name (optional)"/>
+      <button class="btn-manual-busy" onclick="manualBusy()">🔴 Mark Busy</button>
+      <button class="btn-manual-free" onclick="manualFree()">🟢 Free PC</button>
+    </div>
+    <div class="manual-pcs" id="manualPCGrid"></div>
+  </div>
+
+  <div class="table-wrap">
+      <div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;" id="memFilterBar">
+      <button class="filter-btn active" data-filter="all" onclick="setBookingFilter('all')">📋 All</button>
+      <button class="filter-btn" data-filter="pending" onclick="setBookingFilter('pending')">⏳ Pending</button>
+      <button class="filter-btn" data-filter="active" onclick="setBookingFilter('active')">🔴 Active</button>
+      <button class="filter-btn" data-filter="completed" onclick="setBookingFilter('completed')">✓ Completed</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>PCs</th>
+          <th>Duration</th>
+          <th>Add-on</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="bookingsBody"></tbody>
+    </table>
+    <div class="empty-state" id="emptyState">
+      <div class="icon">📭</div>
+      <p>No booking requests yet</p>
+    </div>
+  </div>
+
+  <!-- ========== ACCOUNTS ========== -->
+  <div class="admin-section" style="margin-top:24px;">
+    <div class="admin-section-title">👥 Registered Accounts</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Phone</th><th>Balance</th><th>Points</th><th>Last Login</th><th>Status</th><th></th><th></th></tr>
+        </thead>
+        <tbody id="accountsBody"></tbody>
+      </table>
+      <div class="empty-state" id="accountsEmpty">
+        <div class="icon">📭</div>
+        <p>No accounts yet</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MEMBERSHIP REQUESTS ========== -->
+  <div class="admin-section" style="margin-top:24px;">
+    <div class="admin-section-title">💎 Membership Requests</div>
+    <div class="table-wrap">
+    <div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;" id="bookingFilterBar">
+        <button class="filter-btn active" data-filter="all" onclick="setMemFilter('all')">📋 All</button>
+        <button class="filter-btn" data-filter="pending" onclick="setMemFilter('pending')">⏳ Pending</button>
+        <button class="filter-btn" data-filter="approved" onclick="setMemFilter('approved')">✅ Approved</button>
+        <button class="filter-btn" data-filter="rejected" onclick="setMemFilter('rejected')">❌ Rejected</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>User</th><th>Tier</th><th>Amount</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody id="membershipsBody"></tbody>
+      </table>
+      <div class="empty-state" id="membershipsEmpty">
+        <div class="icon">📭</div>
+        <p>No membership requests</p>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Account details modal -->
+  <div class="modal-overlay" id="accountModal" onclick="if(event.target===this)closeAccountModal()">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeAccountModal()">✕</button>
+      <img id="modalAvatar" class="modal-avatar" src="" alt="" onclick="openLightbox(this.src)"/>
+      <div class="modal-info">
+        <h2 id="modalName"></h2>
+        <div class="phone" id="modalPhone"></div>
+        <div class="row">
+          <span>🪙 <span id="modalBalance"></span></span>
+          <span>⭐ <span id="modalPoints"></span></span>
+        </div>
+        <div class="row">
+          <span class="label">Last Login</span>
+        </div>
+        <div class="muted" id="modalLastLogin"></div>
+        <div id="modalTier"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox for enlarged avatar -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightboxImg" src="" alt=""/>
+  </div>
+
+<script>
+const ADMIN_USER = 'MEDO';
+const ADMIN_PASS = '123456';
+const ALL_PCS = ['PC 1','PC 2','PC 3','PC 4','PC 7','PC 8','PC 9','PC 10','PC 11','PC 12','VIP 1','VIP 2'];
+
+// ===== LOCAL STORAGE DATA LAYER =====
+function _lsGet(key) {
+  try { return JSON.parse(localStorage.getItem('gzg_' + key)) || []; } catch { return []; }
+}
+function _lsSet(key, data) {
+  localStorage.setItem('gzg_' + key, JSON.stringify(data));
+}
+function _lsUpdate(key, id, fields) {
+  const arr = _lsGet(key);
+  const idx = arr.findIndex(x => x.id === id);
+  if (idx !== -1) { Object.assign(arr[idx], fields); _lsSet(key, arr); return arr[idx]; }
+  return null;
+}
+function _lsRemove(key, id) {
+  _lsSet(key, _lsGet(key).filter(x => x.id !== id));
+}
+
+let _lastBookingsData = [];
+let _lastAccountsData = [];
+
+async function getBookings() {
+  _lastBookingsData = _lsGet('bookings');
+  return _lastBookingsData;
+}
+async function getAccounts() {
+  _lastAccountsData = _lsGet('accounts');
+  return _lastAccountsData;
+}
+async function postBooking(d) { const arr = _lsGet('bookings'); arr.push(d); _lsSet('bookings', arr); return d; }
+async function patchBooking(id, d) { return _lsUpdate('bookings', id, d); }
+async function deleteBookingSupabase(id) { _lsRemove('bookings', id); }
+async function deleteAccountSupabase(id) { _lsRemove('accounts', id); }
+async function patchAccount(id, d) { return _lsUpdate('accounts', id, d); }
+function jitter() { return Math.random() * 3000; }
+
+function parsePCs(b) {
+  if (typeof b.pcs === 'string') { try { return JSON.parse(b.pcs); } catch {} }
+  if (Array.isArray(b.pcs)) return b.pcs;
+  if (b.pc_label) return b.pc_label.split(',').map(s => s.trim());
+  if (b.pc) return b.pc.split(',').map(s => s.trim());
+  return [];
+}
+
+// action debounce — prevents double clicks without delay
+const _actionBusy = {};
+function lockedAction(key, fn) {
+  if (_actionBusy[key]) return;
+  _actionBusy[key] = true;
+  Promise.resolve().then(fn).catch(() => {}).finally(() => {
+    setTimeout(() => { _actionBusy[key] = false; }, 200);
+  });
+}
+
+// === PERSISTENT LOGIN ===
+let loginAttempts = 0;
+const MAX_LOGIN_ATTEMPTS = 5;
+let loginLockoutUntil = 0;
+
+function autoLogin() {
+  if (localStorage.getItem('admin_logged') === '1') {
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('monitorDate').value = today;
+    return true;
+  }
+  return false;
+}
+
+async function handleLogin() {
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  const err = document.getElementById('loginError');
+  const now = Date.now();
+  if (now < loginLockoutUntil) {
+    err.textContent = '⏳ Try again in ' + Math.ceil((loginLockoutUntil - now) / 1000) + 's';
+    err.style.display = 'block';
+    return;
+  }
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    loginAttempts = 0;
+    localStorage.setItem('admin_logged', '1');
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('monitorDate').value = today;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    populateManualPCs();
+    await refreshAll();
+    startPolling();
+    setTimeout(playBeep, 500);
+  } else {
+    loginAttempts++;
+    err.style.display = 'block';
+    if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+      loginLockoutUntil = now + 30000;
+      err.textContent = '⏳ Too many attempts. Wait 30s.';
+      loginAttempts = 0;
+    } else {
+      err.textContent = 'Wrong username or password (' + (MAX_LOGIN_ATTEMPTS - loginAttempts) + ' left)';
+    }
+  }
+}
+
+function handleLogout() {
+  localStorage.removeItem('admin_logged');
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = null;
+  if (slowTimer) clearInterval(slowTimer);
+  slowTimer = null;
+  document.getElementById('loginBox').style.display = 'block';
+  document.getElementById('adminPanel').style.display = 'none';
+  document.getElementById('username').value = '';
+  document.getElementById('password').value = '';
+  document.getElementById('loginError').style.display = 'none';
+}
+
+// === NOTIFICATION SOUND ===
+let audioCtx = null;
+
+function playBeep() {
+  try {
+    if (!audioCtx || audioCtx.state === 'suspended') return;
+    const now = audioCtx.currentTime;
+    // 4-tone ascending chime
+    const notes = [[660, 0], [880, 0.18], [1100, 0.36], [1320, 0.54]];
+    notes.forEach(([freq, t]) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, now + t);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.35);
+      osc.start(now + t);
+      osc.stop(now + t + 0.35);
+    });
+  } catch {}
+}
+
+// === AUTO REFRESH ===
+let lastMaxId = 0;
+let lastMaxMembershipId = 0;
+let pollTimer = null;
+let slowTimer = null;
+let cachedBookings = [];
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  if (slowTimer) clearInterval(slowTimer);
+  pollTimer = setInterval(() => fastPoll(), 5000 + jitter());
+  slowTimer = setInterval(() => slowPoll(), 20000 + jitter());
+  fastPoll();
+  slowPoll();
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      clearInterval(pollTimer);
+      clearInterval(slowTimer);
+    } else {
+      fastPoll();
+      slowPoll();
+      pollTimer = setInterval(() => fastPoll(), 5000 + jitter());
+      slowTimer = setInterval(() => slowPoll(), 20000 + jitter());
+    }
+  });
+}
+
+let polling = false;
+let lastBookingsHash = '';
+async function fastPoll() {
+  if (polling) return;
+  polling = true;
+  try {
+    const bookings = await getBookings();
+    const hash = JSON.stringify(bookings.map(b => b.id + b.status));
+    if (hash === lastBookingsHash && cachedBookings.length) {
+      polling = false; return;
+    }
+    lastBookingsHash = hash;
+    cachedBookings = bookings;
+    const ids = cachedBookings.map(b => b.id);
+    const maxId = ids.length ? Math.max(...ids) : 0;
+    if (maxId > lastMaxId && lastMaxId !== 0) {
+      playBeep();
+    }
+    lastMaxId = maxId;
+    renderBookings(cachedBookings);
+    renderMonitor(cachedBookings);
+  } catch (e) { console.warn('Fast poll error:', e); }
+  finally { polling = false; }
+}
+
+let slowPolling = false;
+let lastMmsHash = '';
+async function slowPoll() {
+  if (slowPolling) return;
+  slowPolling = true;
+  try {
+    const [mms, accounts] = await Promise.all([getMemberships(), getAccounts()]);
+    const hash = JSON.stringify(mms.map(m => m.id + m.status));
+    if (hash === lastMmsHash && accounts.length) {
+      slowPolling = false; return;
+    }
+    lastMmsHash = hash;
+    const mids = mms.map(m => m.id);
+    const maxMid = mids.length ? Math.max(...mids) : 0;
+    if (maxMid > lastMaxMembershipId && lastMaxMembershipId !== 0) {
+      playBeep();
+    }
+    lastMaxMembershipId = maxMid;
+    await renderMemberships(mms, accounts);
+    await renderAccounts(accounts);
+  } catch (e) { console.warn('Slow poll error:', e); }
+  finally { slowPolling = false; }
+}
+
+async function refreshAll(bookings) {
+  if (!bookings) { try { bookings = await getBookings(); } catch { bookings = []; } }
+  cachedBookings = bookings;
+  const [accounts, mms] = await Promise.all([getAccounts(), getMemberships()]).catch(() => [[], []]);
+  renderBookings(bookings);
+  await renderMonitor(bookings);
+  await renderAccounts(accounts);
+  await renderMemberships(mms, accounts);
+}
+
+async function renderAccounts(accounts) {
+  const tbody = document.getElementById('accountsBody');
+  const empty = document.getElementById('accountsEmpty');
+  if (!accounts) { try { accounts = await getAccounts(); } catch { accounts = []; } }
+  if (accounts.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  const now = new Date();
+  tbody.innerHTML = accounts.map(a => {
+    const lastSeen = a.last_seen ? new Date(a.last_seen) : null;
+    const online = lastSeen && (now - lastSeen) < 90000;
+    const status = online ? '<span style="color:#00ff64">🟢 Online</span>' : '<span style="color:#666">⚫ Offline</span>';
+    const time = lastSeen ? lastSeen.toLocaleString('en-EG', { hour:'2-digit', minute:'2-digit', day:'numeric', month:'short' }) : 'Never';
+    const bal = a.balance || 0;
+    const pts = a.points || 0;
+    return `<tr>
+      <td>${esc(a.name)}</td>
+      <td>${esc(a.phone)}</td>
+      <td><span class="bal-display" data-id="${a.id}">🪙 ${bal}</span> <button class="btn-edit-bal" onclick="editBalance(${a.id},1)" title="Add balance">➕</button><button class="btn-edit-bal" onclick="editBalance(${a.id},-1)" title="Subtract balance">➖</button></td>
+      <td><span class="pts-display" data-id="${a.id}">⭐ ${pts}</span> <button class="btn-edit-pts" onclick="editPoints(${a.id},1)" title="Add points">➕</button><button class="btn-edit-pts" onclick="editPoints(${a.id},-1)" title="Subtract points">➖</button></td>
+      <td style="font-size:11px;color:#888">${time}</td>
+      <td>${status}</td>
+      <td><button class="btn-view" onclick="viewAccount(${a.id})">👁️</button></td>
+      <td><button class="btn-delete" onclick="if(confirm('Delete account?')){deleteAccountSupabase(${a.id});renderAccounts();}">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function editBalance(id, dir) {
+  const span = document.querySelector('.bal-display[data-id="'+id+'"]');
+  if (!span) return;
+  const current = parseInt(span.textContent.replace('🪙 ','')) || 0;
+  const label = dir === 1 ? 'Add to balance' : 'Subtract from balance';
+  const val = prompt(label + ':', '0');
+  if (val === null) return;
+  const num = parseFloat(val);
+  if (isNaN(num) || num <= 0) { alert('Enter a positive number'); return; }
+  try {
+    await patchAccount(id, { balance: current + (num * dir) });
+    renderAccounts();
+  } catch { alert('Error updating balance'); }
+}
+
+async function editPoints(id, dir) {
+  const span = document.querySelector('.pts-display[data-id="'+id+'"]');
+  if (!span) return;
+  const current = parseInt(span.textContent.replace('⭐ ','')) || 0;
+  const label = dir === 1 ? 'Add points' : 'Subtract points';
+  const val = prompt(label + ':', '0');
+  if (val === null) return;
+  const num = parseInt(val);
+  if (isNaN(num) || num <= 0) { alert('Enter a positive number'); return; }
+  try {
+    await patchAccount(id, { points: current + (num * dir) });
+    renderAccounts();
+  } catch { alert('Error updating points'); }
+}
+
+let _lastMmsData = [];
+
+async function getMemberships() {
+  _lastMmsData = _lsGet('memberships');
+  return _lastMmsData;
+}
+async function patchMembership(id, d) { return _lsUpdate('memberships', id, d); }
+
+async function renderMemberships(ms, accounts) {
+  const tbody = document.getElementById('membershipsBody');
+  const empty = document.getElementById('membershipsEmpty');
+  if (!ms) { try { ms = await getMemberships(); } catch { ms = []; } }
+  if (!accounts) { try { accounts = await getAccounts(); } catch { accounts = []; } }
+  // apply filter
+  const filtered = memFilter === 'all' ? ms : ms.filter(m => m.status === memFilter);
+  if (filtered.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  const accMap = {};
+  accounts.forEach(a => accMap[a.id] = a);
+  tbody.innerHTML = filtered.map(m => {
+    const a = accMap[m.account_id];
+    const name = a ? esc(a.name) : 'ID:' + m.account_id;
+    let actions = '';
+    if (m.status === 'pending') {
+      actions = `<button class="btn-start" onclick="lockedAction('am${m.id}',()=>approveMembership(${m.id},${m.account_id},${m.amount}))">✅ Approve</button> <button class="btn-delete" onclick="lockedAction('rm${m.id}',()=>rejectMembership(${m.id}))">✕ Reject</button>`;
+    } else if (m.status === 'approved') {
+      actions = '<span style="color:#00ff64;font-size:11px;">✅ Approved</span>';
+    } else {
+      actions = '<span style="color:#ff003c;font-size:11px;">❌ Rejected</span>';
+    }
+    const tierColors = { BRONZE:'#cd7f32', SILVER:'#c0c0c0', GOLD:'#ffd700', DIAMOND:'#00ffff' };
+    const color = tierColors[m.tier] || '#fff';
+    return `<tr><td>${name}</td><td style="color:${color};font-weight:700;">${esc(m.tier)}</td><td>💰 ${m.amount} EGP</td><td>${m.status}</td><td>${actions}</td></tr>`;
+  }).join('');
+}
+
+async function approveMembership(mid, accountId, amount) {
+  try {
+    await patchMembership(mid, { status: 'approved' });
+    const accounts = _lsGet('accounts');
+    const acc = accounts.find(a => a.id === accountId);
+    if (acc) {
+      const newBal = (acc.balance || 0) + amount;
+      await patchAccount(accountId, { balance: newBal });
+    }
+    renderMemberships();
+    renderAccounts();
+  } catch { alert('Error approving'); }
+}
+
+async function rejectMembership(mid) {
+  try {
+    await patchMembership(mid, { status: 'rejected' });
+    renderMemberships();
+  } catch { alert('Error rejecting'); }
+}
+
+async function viewAccount(id) {
+  try {
+    const accounts = _lsGet('accounts');
+    const acc = accounts.find(a => a.id === id);
+    if (!acc) return alert('Account not found');
+    document.getElementById('modalName').textContent = acc.name || 'Unknown';
+    document.getElementById('modalPhone').textContent = acc.phone || '';
+    document.getElementById('modalBalance').textContent = acc.balance || 0;
+    document.getElementById('modalPoints').textContent = acc.points || 0;
+    const avatar = document.getElementById('modalAvatar');
+    avatar.src = acc.avatar || 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="60" fill="#6a00ff"/><text x="60" y="76" text-anchor="middle" fill="#fff" font-family="Arial" font-size="48" font-weight="bold">' + (acc.name ? acc.name.charAt(0).toUpperCase() : '?') + '</text></svg>');
+    const lastLogin = acc.last_login ? new Date(acc.last_login).toLocaleString('en-EG', { hour:'2-digit', minute:'2-digit', day:'numeric', month:'short', year:'numeric' }) : 'Never';
+    document.getElementById('modalLastLogin').textContent = lastLogin;
+    // membership tier
+    const allMs = await getMemberships();
+    const approved = allMs.filter(m => m.account_id === acc.id && m.status === 'approved');
+    const tierEl = document.getElementById('modalTier');
+    const tierColors = { BRONZE:'#cd7f32', SILVER:'#c0c0c0', GOLD:'#ffd700', DIAMOND:'#00ffff' };
+    if (approved.length > 0) {
+      approved.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      const tier = approved[0].tier;
+      const color = tierColors[tier] || '#6a00ff';
+      tierEl.innerHTML = '<div class="modal-tier" style="border:2px solid '+color+';color:'+color+'">'+tier+'</div>';
+      avatar.style.border = '3px solid ' + color;
+    } else {
+      tierEl.innerHTML = '';
+      avatar.style.border = '3px solid #6a00ff';
+    }
+    document.getElementById('accountModal').classList.add('show');
+  } catch { alert('Error loading account'); }
+}
+
+function closeAccountModal() {
+  document.getElementById('accountModal').classList.remove('show');
+}
+
+function openLightbox(src) {
+  if (!src || src.includes('svg')) return;
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').classList.add('show');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('show');
+}
+
+// === FILTERS ===
+let bookingFilter = 'all';
+let memFilter = 'all';
+
+function setBookingFilter(f) {
+  bookingFilter = f;
+  document.getElementById('bookingFilterBar').querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === f);
+  });
+  renderBookings();
+}
+
+function setMemFilter(f) {
+  memFilter = f;
+  document.getElementById('memFilterBar').querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === f);
+  });
+  renderMemberships();
+}
+
+// === RENDER ===
+async function renderMonitor(bookings) {
+  if (!bookings) { try { bookings = await getBookings(); } catch { bookings = []; } }
+  const date = document.getElementById('monitorDate').value;
+  const monitor = document.getElementById('pcMonitor');
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  let html = '<div class="pc-monitor-title">🖥️ PC STATUS</div>';
+  for (const pc of ALL_PCS) {
+    const active = bookings.filter(b => b.date === date && b.status === 'active' && parsePCs(b).includes(pc));
+    const busyNow = active.filter(b => {
+      const [h, m] = (b.time || '00:00').split(':').map(Number);
+      const startMin = h * 60 + m;
+      const dur = parseInt(b.duration, 10) || 60;
+      return nowMin >= startMin && nowMin < startMin + dur;
+    });
+    const upcoming = active.filter(b => {
+      const [h, m] = (b.time || '00:00').split(':').map(Number);
+      const startMin = h * 60 + m;
+      return nowMin < startMin;
+    });
+    if (busyNow.length > 0)
+      html += `<div class="pc-monitor-item"><span class="dot busy"></span>${pc} <span class="pc-time">${busyNow.map(b => `${b.time} (${b.name})`).join(', ')}</span></div>`;
+    else if (upcoming.length > 0)
+      html += `<div class="pc-monitor-item"><span class="dot upcoming"></span>${pc} <span class="pc-time upcoming-text">${upcoming.map(b => `${b.time} (${b.name})`).join(', ')}</span></div>`;
+    else
+      html += `<div class="pc-monitor-item"><span class="dot free"></span>${pc} <span class="pc-time">Free</span></div>`;
+  }
+  monitor.innerHTML = html;
+}
+
+function renderBookings(bookings) {
+  const tbody = document.getElementById('bookingsBody');
+  const empty = document.getElementById('emptyState');
+  const count = document.getElementById('bookingCount');
+  // apply filter
+  const filtered = bookingFilter === 'all' ? bookings : bookings.filter(b => b.status === bookingFilter);
+  count.textContent = filtered.length + ' request' + (filtered.length !== 1 ? 's' : '');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = filtered.map((b) => {
+    if (!b.status) b.status = 'pending';
+    const pcs = parsePCs(b);
+    const conflict = findConflictInList({ ...b, pcs }, bookings, bookings.indexOf(b));
+    const conflictBadge = conflict ? '<span class="conflict-badge warn">⚠️</span>' : '<span class="conflict-badge ok">✓</span>';
+    let statusBadge, actionBtn;
+    if (b.status === 'pending') {
+      statusBadge = '<span style="color:#ffa500;font-size:11px;">⏳ Pending</span>';
+      actionBtn = `<button class="btn-start" onclick="lockedAction('s${b.id}',()=>startBooking(${b.id}))">✅ Start</button> <button class="btn-delete" onclick="lockedAction('d${b.id}',()=>deleteBookingLocal(${b.id}))">✕</button>`;
+    } else if (b.status === 'active') {
+      statusBadge = '<span style="color:var(--red);font-size:11px;">🔴 Active</span>';
+      actionBtn = `<button class="btn-free" onclick="lockedAction('f${b.id}',()=>freeBooking(${b.id}))">Free</button>`;
+    } else {
+      statusBadge = '<span style="color:#00ff64;font-size:11px;">✓ Free</span>';
+      actionBtn = `<button class="btn-delete" onclick="lockedAction('dd${b.id}',()=>deleteBookingLocal(${b.id}))">✕</button>`;
+    }
+    return `<tr style="${b.status === 'completed' ? 'opacity:0.4;' : ''}">
+      <td>${esc(b.name)}</td>
+      <td>${esc(b.phone)}</td>
+      <td>${esc(b.pc_label || b.pc)}</td>
+      <td>${esc(b.duration)}</td>
+      <td>${esc(b.addon)}</td>
+      <td>${esc(b.date)}</td>
+      <td>${esc(b.time)}</td>
+      <td>${statusBadge} ${conflictBadge}</td>
+      <td>${actionBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+function findConflictInList(booking, list, index) {
+  for (let i = 0; i < list.length; i++) {
+    if (i === index) continue;
+    const b = list[i];
+    if (b.date !== booking.date) continue;
+    const aStart = timeToMinutes(booking.time);
+    const aDur   = parseDur(booking.duration);
+    const aEnd   = aStart + aDur;
+    const bStart = timeToMinutes(b.time);
+    const bDur   = parseDur(b.duration);
+    const bEnd   = bStart + bDur;
+    for (const pc of (booking.pcs || [])) {
+      if ((parsePCs(b).includes(pc)) && aStart < bEnd && bStart < aEnd) return true;
+    }
+  }
+  return false;
+}
+
+function timeToMinutes(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+function minutesToTime(m) { const h = Math.floor(m / 60); const min = m % 60; return String(h).padStart(2,'0') + ':' + String(min).padStart(2,'0'); }
+function parseDur(d) {
+  const n = parseInt(d, 10);
+  if (!isNaN(n) && n > 0) return n;
+  if (d.includes('30')) return 30;
+  if (d.includes('2')) return 120;
+  if (d.includes('3')) return 180;
+  if (d.includes('Unlimited')) return 1440;
+  return 60;
+}
+
+async function startBooking(id) {
+  await patchBooking(id, { status: 'active' });
+  // instant local update
+  const b = cachedBookings.find(x => x.id === id);
+  if (b) b.status = 'active';
+  renderBookings(cachedBookings);
+  renderMonitor(cachedBookings);
+}
+
+async function freeBooking(id) {
+  await patchBooking(id, { status: 'completed' });
+  const b = cachedBookings.find(x => x.id === id);
+  if (b) b.status = 'completed';
+  renderBookings(cachedBookings);
+  renderMonitor(cachedBookings);
+}
+
+async function deleteBookingLocal(id) {
+  await deleteBookingSupabase(id);
+  cachedBookings = cachedBookings.filter(x => x.id !== id);
+  renderBookings(cachedBookings);
+  renderMonitor(cachedBookings);
+}
+
+function populateManualPCs() {
+  const grid = document.getElementById('manualPCGrid');
+  if (!grid) return;
+  let html = '<button class="manual-toggle-all" onclick="toggleAllPCs()">☐ All</button>';
+  for (const pc of ALL_PCS) {
+    html += `<label class="manual-pc-item" data-pc="${pc}"><input type="checkbox" value="${pc}" onchange="this.parentElement.classList.toggle('selected',this.checked)"/>${pc}</label>`;
+  }
+  grid.innerHTML = html;
+}
+
+function getSelectedManualPCs() {
+  return [...document.querySelectorAll('#manualPCGrid input:checked')].map(c => c.value);
+}
+
+function toggleAllPCs() {
+  const checks = document.querySelectorAll('#manualPCGrid input');
+  const allChecked = [...checks].every(c => c.checked);
+  checks.forEach(c => {
+    c.checked = !allChecked;
+    c.parentElement.classList.toggle('selected', !allChecked);
+  });
+}
+
+async function manualBusy() {
+  const pcs = getSelectedManualPCs();
+  if (pcs.length === 0) { alert('Select at least one PC.'); return; }
+  const name = document.getElementById('manualName').value.trim() || 'Walk-in';
+  const today = new Date();
+  const date = today.toISOString().split('T')[0];
+  const time = today.toTimeString().split(' ')[0].slice(0, 5);
+  try {
+    for (let i = 0; i < pcs.length; i++) {
+      const pc = pcs[i];
+        const res = await postBooking({
+        id: Date.now() + i,
+        name,
+        phone: 'N/A',
+        pcs: JSON.stringify([pc]),
+        pc_label: pc,
+        duration: 'Open',
+        addon: 'None',
+        date,
+        time,
+        status: 'active'
+      });
+      if (!res) throw new Error('Empty response from server');
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+    return;
+  }
+  document.getElementById('manualName').value = '';
+  document.querySelectorAll('#manualPCGrid input:checked').forEach(c => {
+    c.checked = false; c.parentElement.classList.remove('selected');
+  });
+  fastPoll();
+}
+
+async function manualFree() {
+  const pcs = getSelectedManualPCs();
+  if (pcs.length === 0) { alert('Select at least one PC.'); return; }
+  const bookings = await getBookings();
+  for (const pc of pcs) {
+    const active = bookings.filter(b => b.status === 'active' && parsePCs(b).includes(pc));
+    for (const b of active) {
+      await patchBooking(b.id, { status: 'completed' });
+    }
+  }
+  document.querySelectorAll('#manualPCGrid input:checked').forEach(c => {
+    c.checked = false; c.parentElement.classList.remove('selected');
+  });
+  fastPoll();
+}
+
+function esc(s) {
+  if (s == null) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// live clock update every minute
+function startLiveClock() {
+  function updateClock() {
+    const el = document.getElementById('liveClock');
+    if (!el) return;
+    const now = new Date();
+    el.textContent = now.toLocaleTimeString('en-EG', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+  updateClock();
+  setInterval(updateClock, 60000);
+}
+
+// session timeout — auto logout after 30min inactivity
+let sessionTimer = null;
+function resetSessionTimer() {
+  if (sessionTimer) clearTimeout(sessionTimer);
+  if (localStorage.getItem('admin_logged') === '1') {
+    sessionTimer = setTimeout(() => { handleLogout(); alert('Session expired — login again.'); }, 1800000);
+  }
+}
+document.addEventListener('click', resetSessionTimer);
+document.addEventListener('keydown', resetSessionTimer);
+
+// === INIT ===
+if (autoLogin()) {
+  startLiveClock();
+  resetSessionTimer();
+  document.addEventListener('click', function initAudio() {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    setTimeout(playBeep, 200);
+    document.removeEventListener('click', initAudio);
+  }, { once: true });
+  (async () => {
+    populateManualPCs();
+    await refreshAll();
+    startPolling();
+  })();
+}
+</script>
+<script>
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('copy', e => e.preventDefault());
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && ['c','C','x','X','u','U','s','S','p','P'].includes(e.key)) e.preventDefault();
+  if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','i','J','j','C','c'].includes(e.key))) e.preventDefault();
+});
+// anti-devtools
+setInterval(() => {
+  const d = document.createElement('div');
+  Object.defineProperty(d, 'id', { get: () => { location.reload(); } });
+  console.log('%c', d);
+}, 1000);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+</script>
+</body>
+</html>
