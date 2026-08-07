@@ -757,6 +757,7 @@ async function getAccounts() {
   return _lastAccountsData;
 }
 async function postBooking(d) { await _loadStore(); _store.bookings.push(d); await _saveStore('bookings'); return d; }
+async function postBookingsBatch(items) { await _loadStore(); for (const d of items) _store.bookings.push(d); await _saveStore('bookings'); return items; }
 async function patchBooking(id, d) { await _loadStore(); const i = _store.bookings.findIndex(x => x.id === id); if (i !== -1) { Object.assign(_store.bookings[i], d); await _saveStore('bookings'); return _store.bookings[i]; } return null; }
 async function deleteBookingSupabase(id) { await _loadStore(); _store.bookings = _store.bookings.filter(x => x.id !== id); _deleted.bookings.push(id); await _saveStore('bookings'); }
 async function deleteAccountSupabase(id) { await _loadStore(); _store.accounts = _store.accounts.filter(x => x.id !== id); _deleted.accounts.push(id); await _saveStore('accounts'); }
@@ -1296,22 +1297,18 @@ async function manualBusy() {
   const date = today.toISOString().split('T')[0];
   const time = today.toTimeString().split(' ')[0].slice(0, 5);
   try {
-    for (let i = 0; i < pcs.length; i++) {
-      const pc = pcs[i];
-        const res = await postBooking({
-        id: Date.now() + i,
-        name,
-        phone: 'N/A',
-        pcs: JSON.stringify([pc]),
-        pc_label: pc,
-        duration: 'Open',
-        addon: 'None',
-        date,
-        time,
-        status: 'active'
-      });
-      if (!res) throw new Error('Empty response from server');
-    }
+    await postBookingsBatch(pcs.map((pc, i) => ({
+      id: Date.now() + i,
+      name,
+      phone: 'N/A',
+      pcs: JSON.stringify([pc]),
+      pc_label: pc,
+      duration: 'Open',
+      addon: 'None',
+      date,
+      time,
+      status: 'active'
+    })));
   } catch (e) {
     alert('Error: ' + e.message);
     return;
@@ -1327,11 +1324,19 @@ async function manualFree() {
   const pcs = getSelectedManualPCs();
   if (pcs.length === 0) { alert('Select at least one PC.'); return; }
   const bookings = await getBookings();
+  const ids = [];
   for (const pc of pcs) {
     const active = bookings.filter(b => b.status === 'active' && parsePCs(b).includes(pc));
-    for (const b of active) {
-      await patchBooking(b.id, { status: 'completed' });
+    for (const b of active) ids.push(b.id);
+  }
+  if (ids.length) {
+    await _loadStore();
+    let changed = false;
+    for (const id of ids) {
+      const i = _store.bookings.findIndex(x => x.id === id);
+      if (i !== -1) { _store.bookings[i].status = 'completed'; changed = true; }
     }
+    if (changed) await _saveStore('bookings');
   }
   document.querySelectorAll('#manualPCGrid input:checked').forEach(c => {
     c.checked = false; c.parentElement.classList.remove('selected');
