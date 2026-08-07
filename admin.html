@@ -631,8 +631,12 @@ const ADMIN_USER = 'MEDO';
 const ADMIN_PASS = '123456';
 const ALL_PCS = ['PC 1','PC 2','PC 3','PC 4','PC 7','PC 8','PC 9','PC 10','PC 11','PC 12','VIP 1','VIP 2'];
 
-// ===== SHARED CLOUD STORAGE (JSONBlob) with localStorage cache =====
-const CLOUD_URL = 'https://jsonblob.com/api/jsonBlob/019fdd45-7049-7eb2-a93d-dfde16bbd723';
+// ===== SHARED CLOUD STORAGE (JSONBlob, one blob per collection) with localStorage cache =====
+const CLOUD_URLS = {
+  bookings: 'https://jsonblob.com/api/jsonBlob/019fdd52-a5bd-788d-b159-260684da9139',
+  accounts: 'https://jsonblob.com/api/jsonBlob/019fdd52-a432-7877-8214-8a6611e9300e',
+  memberships: 'https://jsonblob.com/api/jsonBlob/019fdd52-a72b-7522-b8a8-3a6461ec70a3',
+};
 const STORE_KEYS = ['bookings', 'accounts', 'memberships'];
 
 function _lsGet(key) {
@@ -644,7 +648,7 @@ function _lsSet(key, data) {
 
 let _store = null;
 let _deleted = {};
-let _dirty = false;
+let _dirty = {};
 let _saveChain = Promise.resolve();
 let _refreshPromise = null;
 let _lastRefreshTime = 0;
@@ -657,6 +661,7 @@ async function _loadStore() {
     memberships: _lsGet('memberships'),
   };
   _deleted = { bookings: [], accounts: [], memberships: [] };
+  _dirty = { bookings: false, accounts: false, memberships: false };
   _refreshStore();
   return _store;
 }
@@ -669,67 +674,67 @@ function _mergeById(localArr, serverArr) {
 }
 
 function _refreshStore() {
-  if (!_store || _dirty) return Promise.resolve();
+  if (!_store) return Promise.resolve();
   if (_refreshPromise) return _refreshPromise;
   const now = Date.now();
   if (now - _lastRefreshTime < 2000) return Promise.resolve();
   _lastRefreshTime = now;
   _refreshPromise = (async () => {
-    try {
-      const ctl = new AbortController();
-      const timer = setTimeout(() => ctl.abort(), 4000);
-      const res = await fetch(CLOUD_URL, { signal: ctl.signal, headers: { 'Accept': 'application/json' } });
-      clearTimeout(timer);
-      const data = await res.json();
-      if (!_dirty && data && typeof data === 'object') {
-        _store.bookings = data.bookings || [];
-        _store.accounts = data.accounts || [];
-        _store.memberships = data.memberships || [];
-        _lsSet('bookings', _store.bookings);
-        _lsSet('accounts', _store.accounts);
-        _lsSet('memberships', _store.memberships);
+    const results = await Promise.all(STORE_KEYS.map(async (key) => {
+      try {
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), 4000);
+        const res = await fetch(CLOUD_URLS[key], { signal: ctl.signal, headers: { 'Accept': 'application/json' } });
+        clearTimeout(timer);
+        const data = await res.json();
+        return [key, Array.isArray(data) ? data : null];
+      } catch { return [key, null]; }
+    }));
+    for (const [key, data] of results) {
+      if (!_dirty[key] && data) {
+        _store[key] = data;
+        _lsSet(key, data);
       }
-    } catch {}
+    }
   })();
   _refreshPromise.finally(() => { _refreshPromise = null; });
   return _refreshPromise;
 }
 
-function _saveStore() {
+function _saveStore(key) {
   if (!_store) return Promise.resolve();
-  _dirty = true;
-  _lsSet('bookings', _store.bookings);
-  _lsSet('accounts', _store.accounts);
-  _lsSet('memberships', _store.memberships);
+  _dirty[key] = true;
+  _lsSet(key, _store[key]);
   _saveChain = _saveChain.then(async () => {
     try {
-      let server = null;
-      try {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        let etag = null, serverArr = [], gotServer = false;
+        try {
+          const ctl = new AbortController();
+          const timer = setTimeout(() => ctl.abort(), 4000);
+          const res = await fetch(CLOUD_URLS[key], { signal: ctl.signal, headers: { 'Accept': 'application/json' } });
+          clearTimeout(timer);
+          etag = res.headers.get('ETag');
+          const data = await res.json();
+          if (Array.isArray(data)) { serverArr = data; gotServer = true; }
+        } catch {}
+        if (gotServer) {
+          serverArr = serverArr.filter(it => !(_deleted[key] || []).includes(it.id));
+          _store[key] = _mergeById(_store[key], serverArr);
+          _deleted[key] = (_deleted[key] || []).filter(id => !_store[key].some(it => it.id === id));
+        }
         const ctl = new AbortController();
         const timer = setTimeout(() => ctl.abort(), 4000);
-        const res = await fetch(CLOUD_URL, { signal: ctl.signal, headers: { 'Accept': 'application/json' } });
+        const res = await fetch(CLOUD_URLS[key], { method: 'PUT', signal: ctl.signal, headers: { 'Content-Type': 'application/json', 'If-Match': gotServer ? etag : '' }, body: JSON.stringify(_store[key]) });
         clearTimeout(timer);
-        server = await res.json();
-      } catch {}
-      if (server && typeof server === 'object') {
-        for (const key of STORE_KEYS) {
-          const serverArr = (server[key] || []).filter(it => !(_deleted[key] || []).includes(it.id));
-          _store[key] = _mergeById(_store[key], serverArr);
-        }
+        if (res.status === 200) break;
+        if (gotServer && res.status === 412) continue;
+        break;
       }
-      for (const key of STORE_KEYS) {
-        _deleted[key] = (_deleted[key] || []).filter(id => !_store[key].some(it => it.id === id));
-      }
-      const ctl = new AbortController();
-      const timer = setTimeout(() => ctl.abort(), 4000);
-      await fetch(CLOUD_URL, { method: 'PUT', signal: ctl.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(_store) });
-      clearTimeout(timer);
-      _lsSet('bookings', _store.bookings);
-      _lsSet('accounts', _store.accounts);
-      _lsSet('memberships', _store.memberships);
     } catch {}
+    _lsSet(key, _store[key]);
   });
-  _saveChain = _saveChain.finally(() => { _dirty = false; });
+  _saveChain = _saveChain.finally(() => { _dirty[key] = false; });
   return _saveChain;
 }
 
@@ -748,11 +753,11 @@ async function getAccounts() {
   _lastAccountsData = _store.accounts;
   return _lastAccountsData;
 }
-async function postBooking(d) { await _loadStore(); _store.bookings.push(d); await _saveStore(); return d; }
-async function patchBooking(id, d) { await _loadStore(); const i = _store.bookings.findIndex(x => x.id === id); if (i !== -1) { Object.assign(_store.bookings[i], d); await _saveStore(); return _store.bookings[i]; } return null; }
-async function deleteBookingSupabase(id) { await _loadStore(); _store.bookings = _store.bookings.filter(x => x.id !== id); _deleted.bookings.push(id); await _saveStore(); }
-async function deleteAccountSupabase(id) { await _loadStore(); _store.accounts = _store.accounts.filter(x => x.id !== id); _deleted.accounts.push(id); await _saveStore(); }
-async function patchAccount(id, d) { await _loadStore(); const i = _store.accounts.findIndex(x => x.id === id); if (i !== -1) { Object.assign(_store.accounts[i], d); await _saveStore(); return _store.accounts[i]; } return null; }
+async function postBooking(d) { await _loadStore(); _store.bookings.push(d); await _saveStore('bookings'); return d; }
+async function patchBooking(id, d) { await _loadStore(); const i = _store.bookings.findIndex(x => x.id === id); if (i !== -1) { Object.assign(_store.bookings[i], d); await _saveStore('bookings'); return _store.bookings[i]; } return null; }
+async function deleteBookingSupabase(id) { await _loadStore(); _store.bookings = _store.bookings.filter(x => x.id !== id); _deleted.bookings.push(id); await _saveStore('bookings'); }
+async function deleteAccountSupabase(id) { await _loadStore(); _store.accounts = _store.accounts.filter(x => x.id !== id); _deleted.accounts.push(id); await _saveStore('accounts'); }
+async function patchAccount(id, d) { await _loadStore(); const i = _store.accounts.findIndex(x => x.id === id); if (i !== -1) { Object.assign(_store.accounts[i], d); await _saveStore('accounts'); return _store.accounts[i]; } return null; }
 function jitter() { return Math.random() * 3000; }
 
 function parsePCs(b) {
@@ -1012,7 +1017,7 @@ async function getMemberships() {
   _lastMmsData = _store.memberships;
   return _lastMmsData;
 }
-async function patchMembership(id, d) { await _loadStore(); const i = _store.memberships.findIndex(x => x.id === id); if (i !== -1) { Object.assign(_store.memberships[i], d); await _saveStore(); return _store.memberships[i]; } return null; }
+async function patchMembership(id, d) { await _loadStore(); const i = _store.memberships.findIndex(x => x.id === id); if (i !== -1) { Object.assign(_store.memberships[i], d); await _saveStore('memberships'); return _store.memberships[i]; } return null; }
 
 async function renderMemberships(ms, accounts) {
   const tbody = document.getElementById('membershipsBody');
