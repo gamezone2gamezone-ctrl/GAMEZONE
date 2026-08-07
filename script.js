@@ -2,7 +2,9 @@
    GAME ZONE GAMING – script.js
 =========================== */
 
-// ===== LOCAL STORAGE DATA LAYER =====
+// ===== SHARED CLOUD STORAGE (JSONBlob) with localStorage cache =====
+const CLOUD_URL = 'https://jsonblob.com/api/jsonBlob/019fdd45-7049-7eb2-a93d-dfde16bbd723';
+
 function _lsGet(key) {
   try { return JSON.parse(localStorage.getItem('gzg_' + key)) || []; } catch { return []; }
 }
@@ -12,46 +14,115 @@ function _lsSet(key, data) {
 function _lsFind(key, pred) {
   return _lsGet(key).find(pred) || null;
 }
-function _lsUpdate(key, id, fields) {
-  const arr = _lsGet(key);
-  const idx = arr.findIndex(x => x.id === id);
-  if (idx !== -1) { Object.assign(arr[idx], fields); _lsSet(key, arr); return arr[idx]; }
-  return null;
+
+let _store = null;
+let _refreshing = false;
+
+async function _loadStore() {
+  if (_store) return _store;
+  _store = {
+    bookings: _lsGet('bookings'),
+    accounts: _lsGet('accounts'),
+    memberships: _lsGet('memberships'),
+  };
+  await _refreshStore();
+  return _store;
 }
-function _lsRemove(key, id) {
-  _lsSet(key, _lsGet(key).filter(x => x.id !== id));
+
+async function _refreshStore() {
+  if (_refreshing || !_store) return;
+  _refreshing = true;
+  try {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 6000);
+    const res = await fetch(CLOUD_URL, { signal: ctl.signal, headers: { 'Accept': 'application/json' } });
+    clearTimeout(timer);
+    const data = await res.json();
+    if (data && typeof data === 'object') {
+      _store.bookings = data.bookings || [];
+      _store.accounts = data.accounts || [];
+      _store.memberships = data.memberships || [];
+      _lsSet('bookings', _store.bookings);
+      _lsSet('accounts', _store.accounts);
+      _lsSet('memberships', _store.memberships);
+    }
+  } catch {}
+  _refreshing = false;
 }
-function _lsInsert(key, item) {
-  const arr = _lsGet(key);
-  arr.push(item);
-  _lsSet(key, arr);
-  return item;
+
+async function _saveStore() {
+  if (!_store) return;
+  _lsSet('bookings', _store.bookings);
+  _lsSet('accounts', _store.accounts);
+  _lsSet('memberships', _store.memberships);
+  try {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 6000);
+    await fetch(CLOUD_URL, { method: 'PUT', signal: ctl.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(_store) });
+    clearTimeout(timer);
+  } catch {}
 }
 
 let _lastBookings = [];
 async function getBookings() {
-  _lastBookings = _lsGet('bookings');
+  await _loadStore();
+  await _refreshStore();
+  _lastBookings = _store.bookings;
   return _lastBookings;
 }
 let _lastAccounts = [];
 async function getAccounts() {
-  _lastAccounts = _lsGet('accounts');
+  await _loadStore();
+  await _refreshStore();
+  _lastAccounts = _store.accounts;
   return _lastAccounts;
 }
 async function getAccountByPhone(phone) {
-  return _lsFind('accounts', a => a.phone === phone);
+  await _loadStore();
+  await _refreshStore();
+  return _store.accounts.find(a => a.phone === phone) || null;
 }
 async function getMemberships() {
-  return _lsGet('memberships');
+  await _loadStore();
+  await _refreshStore();
+  return _store.memberships;
 }
 function jitter() { return Math.random() * 3000; }
 
-async function postBooking(d) { return _lsInsert('bookings', d); }
-async function patchBooking(id, d) { return _lsUpdate('bookings', id, d); }
-async function deleteBookingSupabase(id) { _lsRemove('bookings', id); }
-async function postAccount(d) { return _lsInsert('accounts', d); }
-async function patchAccount(id, d) { return _lsUpdate('accounts', id, d); }
-async function deleteAccountSupabase(id) { _lsRemove('accounts', id); }
+async function postBooking(d) {
+  await _loadStore();
+  _store.bookings.push(d);
+  await _saveStore();
+  return d;
+}
+async function patchBooking(id, d) {
+  await _loadStore();
+  const idx = _store.bookings.findIndex(x => x.id === id);
+  if (idx !== -1) { Object.assign(_store.bookings[idx], d); await _saveStore(); return _store.bookings[idx]; }
+  return null;
+}
+async function deleteBookingSupabase(id) {
+  await _loadStore();
+  _store.bookings = _store.bookings.filter(x => x.id !== id);
+  await _saveStore();
+}
+async function postAccount(d) {
+  await _loadStore();
+  _store.accounts.push(d);
+  await _saveStore();
+  return d;
+}
+async function patchAccount(id, d) {
+  await _loadStore();
+  const idx = _store.accounts.findIndex(x => x.id === id);
+  if (idx !== -1) { Object.assign(_store.accounts[idx], d); await _saveStore(); return _store.accounts[idx]; }
+  return null;
+}
+async function deleteAccountSupabase(id) {
+  await _loadStore();
+  _store.accounts = _store.accounts.filter(x => x.id !== id);
+  await _saveStore();
+}
 
 // ===== AUTH HELPERS =====
 
@@ -788,8 +859,8 @@ document.addEventListener('click', function(e) {
 });
 
 // ===== MEMBERSHIPS =====
-async function postMembership(d) { d.id = d.id || Date.now(); d.created_at = d.created_at || new Date().toISOString(); return _lsInsert('memberships', d); }
-async function patchMembership(id, d) { return _lsUpdate('memberships', id, d); }
+async function postMembership(d) { d.id = d.id || Date.now(); d.created_at = d.created_at || new Date().toISOString(); await _loadStore(); _store.memberships.push(d); await _saveStore(); return d; }
+async function patchMembership(id, d) { await _loadStore(); const i = _store.memberships.findIndex(x => x.id === id); if (i !== -1) { Object.assign(_store.memberships[i], d); await _saveStore(); return _store.memberships[i]; } return null; }
 
 async function requestMembership(el) {
   const user = getCurrentUser();
