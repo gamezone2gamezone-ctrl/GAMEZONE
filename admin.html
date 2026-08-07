@@ -920,7 +920,7 @@ async function slowPoll() {
   slowPolling = true;
   try {
     const [mms, accounts] = await Promise.all([getMemberships(), getAccounts()]);
-    const hash = JSON.stringify(mms.map(m => m.id + m.status));
+    const hash = JSON.stringify(mms.map(m => m.id + m.status) + '|' + accounts.map(a => a.id + ':' + (a.balance || 0) + ':' + (a.points || 0) + ':' + (a.name || '')).join(','));
     if (hash === lastMmsHash && accounts.length) {
       slowPolling = false; return;
     }
