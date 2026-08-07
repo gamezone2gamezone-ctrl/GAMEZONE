@@ -1,4 +1,4 @@
-const CACHE = 'gzg-v2';
+const CACHE = 'gzg-v3';
 const FILES = [
   './',
   './index.html',
