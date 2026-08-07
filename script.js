@@ -4,6 +4,7 @@
 
 // ===== SHARED CLOUD STORAGE (JSONBlob) with localStorage cache =====
 const CLOUD_URL = 'https://jsonblob.com/api/jsonBlob/019fdd45-7049-7eb2-a93d-dfde16bbd723';
+const STORE_KEYS = ['bookings', 'accounts', 'memberships'];
 
 function _lsGet(key) {
   try { return JSON.parse(localStorage.getItem('gzg_' + key)) || []; } catch { return []; }
@@ -11,12 +12,13 @@ function _lsGet(key) {
 function _lsSet(key, data) {
   localStorage.setItem('gzg_' + key, JSON.stringify(data));
 }
-function _lsFind(key, pred) {
-  return _lsGet(key).find(pred) || null;
-}
 
 let _store = null;
-let _refreshing = false;
+let _deleted = {};
+let _dirty = false;
+let _saveChain = Promise.resolve();
+let _refreshPromise = null;
+let _lastRefreshTime = 0;
 
 async function _loadStore() {
   if (_store) return _store;
@@ -25,42 +27,81 @@ async function _loadStore() {
     accounts: _lsGet('accounts'),
     memberships: _lsGet('memberships'),
   };
-  await _refreshStore();
+  _deleted = { bookings: [], accounts: [], memberships: [] };
+  _refreshStore();
   return _store;
 }
 
-async function _refreshStore() {
-  if (_refreshing || !_store) return;
-  _refreshing = true;
-  try {
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 6000);
-    const res = await fetch(CLOUD_URL, { signal: ctl.signal, headers: { 'Accept': 'application/json' } });
-    clearTimeout(timer);
-    const data = await res.json();
-    if (data && typeof data === 'object') {
-      _store.bookings = data.bookings || [];
-      _store.accounts = data.accounts || [];
-      _store.memberships = data.memberships || [];
-      _lsSet('bookings', _store.bookings);
-      _lsSet('accounts', _store.accounts);
-      _lsSet('memberships', _store.memberships);
-    }
-  } catch {}
-  _refreshing = false;
+function _mergeById(localArr, serverArr) {
+  const map = new Map();
+  for (const it of (serverArr || [])) map.set(it.id, it);
+  for (const it of (localArr || [])) map.set(it.id, it);
+  return Array.from(map.values());
 }
 
-async function _saveStore() {
-  if (!_store) return;
+function _refreshStore() {
+  if (!_store || _dirty) return Promise.resolve();
+  if (_refreshPromise) return _refreshPromise;
+  const now = Date.now();
+  if (now - _lastRefreshTime < 2000) return Promise.resolve();
+  _lastRefreshTime = now;
+  _refreshPromise = (async () => {
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 4000);
+      const res = await fetch(CLOUD_URL, { signal: ctl.signal, headers: { 'Accept': 'application/json' } });
+      clearTimeout(timer);
+      const data = await res.json();
+      if (!_dirty && data && typeof data === 'object') {
+        _store.bookings = data.bookings || [];
+        _store.accounts = data.accounts || [];
+        _store.memberships = data.memberships || [];
+        _lsSet('bookings', _store.bookings);
+        _lsSet('accounts', _store.accounts);
+        _lsSet('memberships', _store.memberships);
+      }
+    } catch {}
+  })();
+  _refreshPromise.finally(() => { _refreshPromise = null; });
+  return _refreshPromise;
+}
+
+function _saveStore() {
+  if (!_store) return Promise.resolve();
+  _dirty = true;
   _lsSet('bookings', _store.bookings);
   _lsSet('accounts', _store.accounts);
   _lsSet('memberships', _store.memberships);
-  try {
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 6000);
-    await fetch(CLOUD_URL, { method: 'PUT', signal: ctl.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(_store) });
-    clearTimeout(timer);
-  } catch {}
+  _saveChain = _saveChain.then(async () => {
+    try {
+      let server = null;
+      try {
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), 4000);
+        const res = await fetch(CLOUD_URL, { signal: ctl.signal, headers: { 'Accept': 'application/json' } });
+        clearTimeout(timer);
+        server = await res.json();
+      } catch {}
+      if (server && typeof server === 'object') {
+        for (const key of STORE_KEYS) {
+          const serverArr = (server[key] || []).filter(it => !(_deleted[key] || []).includes(it.id));
+          _store[key] = _mergeById(_store[key], serverArr);
+        }
+      }
+      for (const key of STORE_KEYS) {
+        _deleted[key] = (_deleted[key] || []).filter(id => !_store[key].some(it => it.id === id));
+      }
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 4000);
+      await fetch(CLOUD_URL, { method: 'PUT', signal: ctl.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(_store) });
+      clearTimeout(timer);
+      _lsSet('bookings', _store.bookings);
+      _lsSet('accounts', _store.accounts);
+      _lsSet('memberships', _store.memberships);
+    } catch {}
+  });
+  _saveChain = _saveChain.finally(() => { _dirty = false; });
+  return _saveChain;
 }
 
 let _lastBookings = [];
@@ -104,6 +145,7 @@ async function patchBooking(id, d) {
 async function deleteBookingSupabase(id) {
   await _loadStore();
   _store.bookings = _store.bookings.filter(x => x.id !== id);
+  _deleted.bookings.push(id);
   await _saveStore();
 }
 async function postAccount(d) {
@@ -121,6 +163,7 @@ async function patchAccount(id, d) {
 async function deleteAccountSupabase(id) {
   await _loadStore();
   _store.accounts = _store.accounts.filter(x => x.id !== id);
+  _deleted.accounts.push(id);
   await _saveStore();
 }
 
