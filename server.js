@@ -1173,6 +1173,8 @@ app.use((req, res, next) => {
   if (BLOCKED.some(x => p === x || p.startsWith(x + '/')) || /^\/package(-lock)?\.json$/.test(p)) return res.status(404).end();
   next();
 });
+app.get('/api/health', (req, res) => res.json({ ok: true, uptime: process.uptime() }));
+
 app.use(express.static(path.join(__dirname), { index: 'index.html' }));
 
 const server = http.createServer(app);
