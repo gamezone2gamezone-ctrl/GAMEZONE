@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: game-zone-cafe
-    runtime: node
-    plan: free
-    buildCommand: npm install
-    startCommand: node server.js
-    healthCheckPath: /api/health
-    autoDeploy: true
