@@ -687,6 +687,10 @@
           <button class="btn-primary" onclick="saveSettings()">💾 SAVE SETTINGS</button>
           <span id="settingsMsg" style="font-size:12px;color:#4ade80;"></span>
         </div>
+        <div class="field-row" style="margin-top:18px;border-top:1px solid rgba(255,255,255,0.08);padding-top:14px;">
+          <div class="field"><label>Admin Username</label><input type="text" id="setAdminUser" placeholder="MEDO" autocomplete="off"/></div>
+          <div class="field"><label>New Admin Password</label><input type="password" id="setAdminPass" placeholder="leave empty to keep" autocomplete="new-password"/></div>
+        </div>
       </div>
     </div>
 
@@ -1164,17 +1168,21 @@ async function fillSettings() {
 function setVal(id, v) { const el = document.getElementById(id); if (el && v != null) el.value = v; }
 async function saveSettings() {
   try {
-    await api('/api/settings', {
-      method: 'PUT',
-      body: JSON.stringify({
-        standard_price_per_hour: +document.getElementById('setStd').value,
-        vip_price_per_hour: +document.getElementById('setVip').value,
-        points_std_per_hour: +document.getElementById('setPtsStd').value,
-        points_vip_per_hour: +document.getElementById('setPtsVip').value,
-        points_per_egp: +document.getElementById('setPtsEgp').value,
-        deposit: +document.getElementById('setDeposit').value,
-      }),
-    });
+    const body = {
+      standard_price_per_hour: +document.getElementById('setStd').value,
+      vip_price_per_hour: +document.getElementById('setVip').value,
+      points_std_per_hour: +document.getElementById('setPtsStd').value,
+      points_vip_per_hour: +document.getElementById('setPtsVip').value,
+      points_per_egp: +document.getElementById('setPtsEgp').value,
+      deposit: +document.getElementById('setDeposit').value,
+    };
+    const au = document.getElementById('setAdminUser').value.trim();
+    if (au) body.admin_user = au;
+    const ap = document.getElementById('setAdminPass').value;
+    if (ap) body.admin_pass = ap;
+    await api('/api/settings', { method: 'PUT', body: JSON.stringify(body) });
+    document.getElementById('setAdminUser').value = '';
+    document.getElementById('setAdminPass').value = '';
     const msg = document.getElementById('settingsMsg');
     msg.textContent = '✅ Saved — live site updated';
     msg.style.color = '#4ade80';
