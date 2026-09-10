@@ -1,4 +1,4 @@
-const CACHE = 'gzg-v3';
+﻿const CACHE = 'gzg-v9';
 const FILES = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ const FILES = [
   './script.js',
   './1.png',
 ];
+const SKIP_PATHS = ['/api', '/ws'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -17,14 +18,22 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+  );
   e.waitUntil(clients.claim());
 });
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
+  // never intercept API or WebSocket traffic
+  if (url.origin === location.origin && SKIP_PATHS.some(p => url.pathname.startsWith(p))) {
+    return;
+  }
+
   // always serve game.html for navigation when offline
-    if (e.request.mode === 'navigate') {
+  if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request).catch(() => caches.match('./game.html'))
     );

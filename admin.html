@@ -21,16 +21,12 @@
       --glow-both: 0 0 20px #6a00ff66, 0 0 40px #ff003c44;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
-    input { -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text; }
+    input, textarea, select { -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text; }
     body {
       font-family: 'Cairo', sans-serif;
       background: var(--dark);
       color: #fff;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
     }
     .login-box {
       background: var(--glass);
@@ -41,6 +37,9 @@
       width: 100%;
       text-align: center;
       backdrop-filter: blur(10px);
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
     }
     .login-box h1 {
       font-family: 'Orbitron', monospace;
@@ -51,11 +50,7 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .login-box p {
-      color: rgba(255,255,255,0.4);
-      font-size: 13px;
-      margin-bottom: 28px;
-    }
+    .login-box p { color: rgba(255,255,255,0.4); font-size: 13px; margin-bottom: 28px; }
     .login-box input {
       width: 100%;
       background: rgba(255,255,255,0.06);
@@ -69,10 +64,7 @@
       transition: 0.3s;
       margin-bottom: 14px;
     }
-    .login-box input:focus {
-      border-color: var(--purple);
-      box-shadow: 0 0 0 2px rgba(106,0,255,0.25);
-    }
+    .login-box input:focus { border-color: var(--purple); box-shadow: 0 0 0 2px rgba(106,0,255,0.25); }
     .login-box button {
       width: 100%;
       padding: 14px;
@@ -89,37 +81,88 @@
       box-shadow: var(--glow-both);
     }
     .login-box button:hover { transform: scale(1.02); }
-    .login-error {
-      color: var(--red);
-      font-size: 13px;
-      margin-top: 12px;
-      display: none;
+    .login-error { color: var(--red); font-size: 13px; margin-top: 12px; display: none; }
+
+    .admin-shell { display: none; min-height: 100vh; }
+    .admin-shell.show { display: flex; }
+
+    /* ============ SIDEBAR ============ */
+    .sidebar {
+      width: 230px;
+      flex-shrink: 0;
+      background: #0b0010;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
     }
-    .admin-panel { display: none; width: 100%; max-width: 1100px; }
-    .admin-header {
+    .sidebar .brand {
+      font-family: 'Orbitron', monospace;
+      font-size: 16px;
+      font-weight: 900;
+      padding: 6px 12px 18px;
+      background: linear-gradient(90deg, var(--purple), var(--red));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 1px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      color: rgba(255,255,255,0.6);
+      font-size: 14px;
+      font-weight: 600;
+      transition: 0.2s;
+      border: 1px solid transparent;
+    }
+    .nav-item:hover { color: #fff; background: rgba(106,0,255,0.1); }
+    .nav-item.active {
+      color: #fff;
+      background: linear-gradient(90deg, rgba(106,0,255,0.25), rgba(255,0,60,0.12));
+      border-color: rgba(106,0,255,0.35);
+    }
+    .nav-item .nav-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      flex-shrink: 0;
+    }
+    .nav-item.active .nav-dot { background: var(--red); box-shadow: 0 0 8px var(--red); }
+    .sidebar .logout-row { margin-top: auto; padding-top: 16px; }
+
+    /* ============ MAIN ============ */
+    .main {
+      flex: 1;
+      padding: 22px 26px;
+      min-width: 0;
+    }
+    .topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
       gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
     }
-    .admin-header h1 {
+    .topbar h1 {
       font-family: 'Orbitron', monospace;
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 900;
       background: linear-gradient(90deg, var(--purple), var(--red));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .admin-header .badge {
-      font-size: 12px;
-      color: rgba(255,255,255,0.4);
-      background: var(--glass);
-      border: 1px solid var(--glass-border);
-      border-radius: 20px;
-      padding: 6px 16px;
-    }
+    .topbar .badge { font-size: 12px; color: rgba(255,255,255,0.5); background: var(--glass); border: 1px solid var(--glass-border); border-radius: 20px; padding: 6px 16px; }
+    .live-clock { font-family: 'Orbitron', monospace; font-size: 12px; color: rgba(255,255,255,0.5); letter-spacing: 1px; }
     .btn-logout {
       font-family: 'Orbitron', monospace;
       font-size: 12px;
@@ -132,361 +175,221 @@
       cursor: pointer;
       transition: 0.3s;
     }
-    .btn-logout:hover {
-      background: rgba(255,0,60,0.1);
-      border-color: var(--red);
+    .btn-logout:hover { background: rgba(255,0,60,0.1); border-color: var(--red); }
+
+    .panel { display: none; }
+    .panel.show { display: block; animation: panelIn 0.18s ease; }
+    @keyframes panelIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    /* stats cards */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .stat-card {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 18px 16px;
     }
-    .live-clock {
-      font-family: 'Orbitron', monospace;
-      font-size: 13px;
-      color: rgba(255,255,255,0.5);
-      letter-spacing: 1px;
-      white-space: nowrap;
-    }
-    .pc-monitor {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 24px;
+    .stat-card .num { font-family: 'Orbitron', monospace; font-size: 26px; font-weight: 900; color: #fff; }
+    .stat-card .lbl { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px; }
+    .stat-card.purple .num { color: #a78bfa; }
+    .stat-card.red .num { color: var(--red); }
+    .stat-card.green .num { color: #00ff64; }
+    .stat-card.yellow .num { color: #ffc107; }
+
+    /* shared panels */
+    .card {
       background: var(--glass);
       border: 1px solid var(--glass-border);
       border-radius: 14px;
       padding: 16px;
+      margin-bottom: 16px;
     }
-    .pc-monitor-title {
-      width: 100%;
+    .card-title {
       font-family: 'Orbitron', monospace;
-      font-size: 11px;
+      font-size: 12px;
       letter-spacing: 2px;
-      color: rgba(255,255,255,0.3);
-      margin-bottom: 4px;
+      color: var(--purple);
+      font-weight: 700;
+      margin-bottom: 12px;
     }
+    .card-title .hint { color: rgba(255,255,255,0.3); letter-spacing: 0; text-transform: none; }
+
+    .pc-date-picker { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .pc-date-picker label { font-family: 'Orbitron', monospace; font-size: 11px; letter-spacing: 1px; color: rgba(255,255,255,0.4); }
+    .pc-date-picker input {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); border-radius: 8px;
+      padding: 8px 12px; color: #fff; font-family: 'Cairo', sans-serif; font-size: 13px; outline: none;
+    }
+    .pc-monitor { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .pc-monitor-title { width: 100%; font-family: 'Orbitron', monospace; font-size: 11px; letter-spacing: 2px; color: rgba(255,255,255,0.3); margin-bottom: 4px; }
     .pc-monitor-item {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 10px;
-      padding: 8px 14px;
-      font-size: 13px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: 0.2s;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+      padding: 8px 14px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.2s;
     }
-    .pc-monitor-item .dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
+    .pc-monitor-item .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
     .pc-monitor-item .dot.free { background: #00ff64; box-shadow: 0 0 8px #00ff64; }
     .pc-monitor-item .dot.busy { background: var(--red); box-shadow: 0 0 8px var(--red); animation: blink 1s infinite; }
     .pc-monitor-item .dot.upcoming { background: #ffc107; box-shadow: 0 0 8px #ffc107; }
     @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
     .pc-monitor-item .pc-time { font-size: 10px; color: rgba(255,255,255,0.35); font-weight: 400; }
     .pc-monitor-item .upcoming-text { color: #ffc107; }
-    .pc-date-picker {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 16px;
+
+    .manual-control { background: #111; border: 1px solid #6a00ff; border-radius: 8px; padding: 12px 16px; margin: 12px 0; }
+    .manual-title { color: #6a00ff; font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px; }
+    .manual-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .manual-row select, .manual-row input {
+      background: #000; border: 1px solid #6a00ff; color: #fff; padding: 6px 10px; border-radius: 4px;
+      font-family: 'Cairo', sans-serif; font-size: 13px;
     }
-    .pc-date-picker label {
-      font-family: 'Orbitron', monospace;
-      font-size: 11px;
-      letter-spacing: 1px;
-      color: rgba(255,255,255,0.4);
+    .manual-row input { flex: 1; min-width: 150px; }
+    .btn-manual-busy, .btn-manual-free { border: none; padding: 6px 14px; border-radius: 4px; font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; }
+    .btn-manual-busy { background: #ff003c; color: #fff; }
+    .btn-manual-free { background: #00cc66; color: #000; }
+    .manual-pcs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .manual-pc-item {
+      display: flex; align-items: center; gap: 4px; background: #000; border: 1px solid #333; border-radius: 4px;
+      padding: 4px 8px; cursor: pointer; font-size: 12px; font-family: 'Cairo', sans-serif; transition: 0.15s;
     }
-    .pc-date-picker input {
+    .manual-pc-item.selected { border-color: #6a00ff; background: rgba(106,0,255,0.15); }
+    .manual-pc-item input { display: none; }
+
+    /* tables */
+    .table-wrap { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 16px; overflow-x: auto; padding: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
+    th { font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 1px; color: rgba(255,255,255,0.4); text-transform: uppercase; padding: 14px 14px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); color: rgba(255,255,255,0.8); }
+    tr:hover td { background: rgba(106,0,255,0.06); }
+    .empty-state { text-align: center; padding: 50px 20px; color: rgba(255,255,255,0.3); }
+    .empty-state .icon { font-size: 42px; margin-bottom: 10px; }
+    .empty-state p { font-size: 13px; }
+
+    .btn-delete { background: none; border: 1px solid rgba(255,0,60,0.3); color: var(--red); padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: 'Cairo', sans-serif; transition: 0.2s; }
+    .btn-delete:hover { background: rgba(255,0,60,0.15); border-color: var(--red); }
+    .btn-view { background: none; border: 1px solid rgba(106,0,255,0.3); color: #6a00ff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+    .btn-view:hover { background: rgba(106,0,255,0.15); border-color: #6a00ff; }
+    .btn-primary { background: linear-gradient(90deg, var(--purple), var(--red)); border: none; color: #fff; padding: 10px 20px; border-radius: 8px; font-family: 'Orbitron', monospace; font-weight: 700; font-size: 12px; letter-spacing: 1px; cursor: pointer; transition: 0.25s; }
+    .btn-primary:hover { filter: brightness(1.2); }
+    .btn-ghost { background: none; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; transition: 0.2s; font-family: 'Cairo', sans-serif; }
+    .btn-ghost:hover { border-color: var(--purple); color: #fff; }
+    .btn-free { background: none; border: 1px solid rgba(0,255,100,0.3); color: #00ff64; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: 'Cairo', sans-serif; transition: 0.2s; }
+    .btn-free:hover { background: rgba(0,255,100,0.15); border-color: #00ff64; }
+    .btn-start { background: none; border: 1px solid rgba(255,165,0,0.3); color: #ffa500; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: 'Cairo', sans-serif; transition: 0.2s; }
+    .btn-start:hover { background: rgba(255,165,0,0.15); border-color: #ffa500; }
+    .btn-small { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+    .btn-cancel { background: none; border: 1px solid rgba(255,165,0,0.4); color: #ffb86c; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: 'Cairo', sans-serif; transition: 0.2s; }
+    .btn-cancel:hover { background: rgba(255,165,0,0.15); border-color: #ffb86c; }
+    .paid-tag { color: #4ade80; font-size: 11px; display: block; }
+    .dur-chip { background: none; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; font-family: 'Cairo', sans-serif; transition: 0.15s; }
+    .dur-chip.active, .dur-chip:hover { border-color: #6a00ff; background: rgba(106,0,255,0.2); color: #fff; }
+    .dur-chips { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .manual-booking-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .manual-booking-form .field label { display: block; font-size: 11px; color: rgba(255,255,255,0.55); margin-bottom: 5px; font-family: 'Cairo', sans-serif; }
+    .manual-booking-form .field input, .manual-booking-form .field select { width: 100%; background: #0c0c14; border: 1px solid #333; border-radius: 6px; padding: 8px 10px; color: #fff; font-family: 'Cairo', sans-serif; }
+    .manual-booking-form .field input:focus, .manual-booking-form .field select:focus { outline: none; border-color: #6a00ff; }
+    .chk { display: flex; align-items: center; gap: 8px; font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 8px; cursor: pointer; }
+    .conflict-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 12px; display: inline-block; }
+    .conflict-badge.ok { background: rgba(0,255,100,0.12); color: #00ff64; border: 1px solid rgba(0,255,100,0.25); }
+    .conflict-badge.warn { background: rgba(255,165,0,0.12); color: #ffa500; border: 1px solid rgba(255,165,0,0.25); }
+    .filter-btn { background: none; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: 'Cairo', sans-serif; transition: 0.2s; }
+    .filter-btn:hover { border-color: #6a00ff; color: #fff; }
+    .filter-btn.active { background: rgba(106,0,255,0.2); border-color: #6a00ff; color: #fff; }
+    .filterbar { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+
+    /* forms */
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 11px; color: rgba(255,255,255,0.45); margin-bottom: 4px; font-family: 'Orbitron', monospace; letter-spacing: 1px; }
+    .field input[type="text"], .field input[type="number"], .field input[type="url"], .field select, .field textarea {
+      width: 100%;
       background: rgba(255,255,255,0.06);
-      border: 1px solid var(--glass-border);
+      border: 1px solid rgba(255,255,255,0.1);
       border-radius: 8px;
-      padding: 8px 12px;
+      padding: 10px 12px;
       color: #fff;
       font-family: 'Cairo', sans-serif;
       font-size: 13px;
       outline: none;
+      transition: 0.2s;
     }
-    .manual-control {
+    .field textarea { min-height: 70px; resize: vertical; }
+    .field select option { background: #111; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--purple); }
+    .field-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0 14px; }
+    .check-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 13px; color: rgba(255,255,255,0.8); }
+    .check-row input[type="checkbox"] { accent-color: var(--purple); width: 16px; height: 16px; }
+
+    /* repeat list */
+    .rep-list { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+    .rep-item {
+      background: rgba(106,0,255,0.06);
+      border: 1px solid rgba(106,0,255,0.25);
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .rep-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; }
+    .rep-head .idx { font-family: 'Orbitron', monospace; font-size: 11px; color: var(--purple); }
+    .rep-head .btns { display: flex; gap: 6px; }
+    .rep-actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+
+    /* image field */
+    .img-field { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .img-preview { width: 74px; height: 74px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(255,255,255,0.12); background: #111; }
+    .img-empty { width: 74px; height: 74px; border-radius: 10px; border: 1px dashed rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.25); font-size: 11px; }
+    .img-hint { font-size: 10px; color: rgba(255,255,255,0.3); }
+
+    /* toast */
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%);
       background: #111;
-      border: 1px solid #6a00ff;
-      border-radius: 8px;
-      padding: 12px 16px;
-      margin: 12px 0;
-    }
-    .manual-title {
-      color: #6a00ff;
-      font-family: 'Orbitron', monospace;
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 8px;
-      letter-spacing: 1px;
-    }
-    .manual-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .manual-row select,
-    .manual-row input {
-      background: #000;
       border: 1px solid #6a00ff;
       color: #fff;
-      padding: 6px 10px;
-      border-radius: 4px;
-      font-family: 'Cairo', sans-serif;
-      font-size: 13px;
-    }
-    .manual-row input { flex: 1; min-width: 150px; }
-    .btn-manual-busy, .btn-manual-free {
-      border: none;
-      padding: 6px 14px;
-      border-radius: 4px;
-      font-family: 'Orbitron', monospace;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 0.5px;
-    }
-    .btn-manual-busy { background: #ff003c; color: #fff; }
-    .btn-manual-free { background: #00cc66; color: #000; }
-    .btn-manual-busy:hover { background: #cc002e; }
-    .btn-manual-free:hover { background: #00aa55; }
-    .manual-pcs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 8px;
-    }
-    .manual-pc-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: #000;
-      border: 1px solid #333;
-      border-radius: 4px;
-      padding: 4px 8px;
-      cursor: pointer;
-      font-size: 12px;
-      font-family: 'Cairo', sans-serif;
-      transition: 0.15s;
-    }
-    .manual-pc-item.selected {
-      border-color: #6a00ff;
-      background: rgba(106,0,255,0.15);
-    }
-    .manual-pc-item input { display: none; }
-    .manual-toggle-all {
-      background: none;
-      border: 1px solid #333;
-      color: #888;
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-family: 'Orbitron', monospace;
-      cursor: pointer;
-    }
-    .manual-toggle-all:hover { border-color: #6a00ff; color: #fff; }
-    .admin-section-title {
-      color: #6a00ff;
-      font-family: 'Orbitron', monospace;
-      font-size: 15px;
-      font-weight: 700;
-      margin-bottom: 10px;
-      letter-spacing: 1px;
-    }
-    .table-wrap {
-      background: var(--glass);
-      border: 1px solid var(--glass-border);
-      border-radius: 16px;
-      overflow-x: auto;
-      padding: 4px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-      min-width: 750px;
-    }
-    th {
-      font-family: 'Orbitron', monospace;
-      font-size: 11px;
-      letter-spacing: 1px;
-      color: rgba(255,255,255,0.4);
-      text-transform: uppercase;
-      padding: 16px 14px;
-      text-align: left;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    td {
-      padding: 14px;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.8);
-    }
-    tr:hover td { background: rgba(106,0,255,0.06); }
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: rgba(255,255,255,0.3);
-    }
-    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
-    .empty-state p { font-size: 14px; }
-    .btn-delete {
-      background: none;
-      border: 1px solid rgba(255,0,60,0.3);
-      color: var(--red);
-      padding: 4px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      font-family: 'Cairo', sans-serif;
-      transition: 0.2s;
-    }
-    .btn-delete:hover {
-      background: rgba(255,0,60,0.15);
-      border-color: var(--red);
-    }
-    .btn-edit-bal,
-    .btn-edit-pts {
-      background: none;
-      border: none;
-      color: #6a00ff;
-      cursor: pointer;
-      font-size: 12px;
-      padding: 2px 4px;
-    }
-    .btn-edit-bal:hover,
-    .btn-edit-pts:hover { color: #fff; }
-    .btn-view {
-      background: none;
-      border: 1px solid rgba(106,0,255,0.3);
-      color: #6a00ff;
-      padding: 4px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      transition: 0.2s;
-    }
-    .btn-view:hover { background: rgba(106,0,255,0.15); border-color: #6a00ff; }
-    .filter-btn {
-      background: none;
-      border: 1px solid rgba(255,255,255,0.1);
-      color: rgba(255,255,255,0.4);
-      padding: 4px 12px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 11px;
-      font-family: 'Cairo', sans-serif;
-      transition: 0.2s;
-    }
-    .filter-btn:hover { border-color: #6a00ff; color: #fff; }
-    .filter-btn.active { background: rgba(106,0,255,0.2); border-color: #6a00ff; color: #fff; }
-    .conflict-badge {
-      font-size: 10px;
-      font-weight: 700;
-      padding: 2px 8px;
+      padding: 12px 22px;
       border-radius: 12px;
-      display: inline-block;
-    }
-    .conflict-badge.ok { background: rgba(0,255,100,0.12); color: #00ff64; border: 1px solid rgba(0,255,100,0.25); }
-    .conflict-badge.warn { background: rgba(255,165,0,0.12); color: #ffa500; border: 1px solid rgba(255,165,0,0.25); }
-    .btn-free {
-      background: none;
-      border: 1px solid rgba(0,255,100,0.3);
-      color: #00ff64;
-      padding: 4px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      font-family: 'Cairo', sans-serif;
-      transition: 0.2s;
-    }
-    .btn-free:hover { background: rgba(0,255,100,0.15); border-color: #00ff64; }
-    .btn-start {
-      background: none;
-      border: 1px solid rgba(255,165,0,0.3);
-      color: #ffa500;
-      padding: 4px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      font-family: 'Cairo', sans-serif;
-      transition: 0.2s;
-    }
-    .btn-start:hover { background: rgba(255,165,0,0.15); border-color: #ffa500; }
-    @media (max-width: 768px) {
-      body { padding: 12px; }
-      .login-box { padding: 32px 20px; }
-      td, th { padding: 10px 8px; font-size: 12px; }
-    }
-    /* Modal */
-    .modal-overlay {
+      font-size: 13px;
+      z-index: 99999;
       display: none;
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.8);
-      backdrop-filter: blur(6px);
-      z-index: 9999;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      box-shadow: 0 0 30px rgba(106,0,255,0.4);
+      max-width: 90vw;
     }
+    .toast.show { display: block; animation: toastIn 0.2s ease; }
+    .toast.err { border-color: var(--red); box-shadow: 0 0 30px rgba(255,0,60,0.4); }
+    @keyframes toastIn { from { transform: translateX(-50%) translateY(12px); opacity: 0; } to { transform: translateX(-50%); opacity: 1; } }
+
+    .row-focus { animation: rowFocus 3s ease; }
+    @keyframes rowFocus { 0%,70% { background: rgba(106,0,255,0.25); } 100% { background: transparent; } }
+
+    /* account modal & lightbox */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
     .modal-overlay.show { display: flex; }
-    .modal-box {
-      background: #111;
-      border: 1px solid #6a00ff;
-      border-radius: 20px;
-      padding: 32px;
-      max-width: 420px;
-      width: 100%;
-      position: relative;
-      animation: modalIn 0.2s ease;
-    }
+    .modal-box { background: #111; border: 1px solid #6a00ff; border-radius: 20px; padding: 32px; max-width: 440px; width: 100%; position: relative; animation: modalIn 0.2s ease; max-height: 92vh; overflow-y: auto; }
     @keyframes modalIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .modal-close {
-      position: absolute;
-      top: 12px; right: 16px;
-      background: none;
-      border: none;
-      color: rgba(255,255,255,0.4);
-      font-size: 24px;
-      cursor: pointer;
-    }
+    .modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; color: rgba(255,255,255,0.4); font-size: 24px; cursor: pointer; }
     .modal-close:hover { color: #fff; }
-    .modal-avatar {
-      width: 120px; height: 120px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid #6a00ff;
-      cursor: pointer;
-      display: block;
-      margin: 0 auto 16px;
-      transition: 0.2s;
-    }
+    .modal-avatar { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid #6a00ff; cursor: pointer; display: block; margin: 0 auto 12px; transition: 0.2s; }
     .modal-avatar:hover { filter: brightness(1.3); }
     .modal-info { text-align: center; }
-    .modal-info h2 { font-family: 'Orbitron', monospace; font-size: 20px; margin-bottom: 4px; }
-    .modal-info .phone { color: rgba(255,255,255,0.4); font-size: 14px; margin-bottom: 16px; }
+    .modal-info h2 { font-family: 'Orbitron', monospace; font-size: 19px; margin-bottom: 4px; }
+    .modal-info .phone { color: rgba(255,255,255,0.4); font-size: 14px; margin-bottom: 14px; }
     .modal-info .row { display: flex; justify-content: center; gap: 24px; margin-bottom: 12px; }
     .modal-info .row span { font-size: 14px; }
     .modal-info .label { color: rgba(255,255,255,0.3); font-size: 11px; font-family: 'Orbitron', monospace; letter-spacing: 1px; text-transform: uppercase; }
     .modal-info .muted { color: rgba(255,255,255,0.4); font-size: 12px; }
     .modal-tier { display: inline-block; margin-top: 8px; padding: 4px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; font-family: 'Orbitron', monospace; }
-    /* Lightbox */
-    .lightbox {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.92);
-      z-index: 99999;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
+    .lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 99999; align-items: center; justify-content: center; cursor: pointer; }
     .lightbox.show { display: flex; }
-    .lightbox img {
-      max-width: 90vw;
-      max-height: 90vh;
-      border-radius: 16px;
-      border: 3px solid #6a00ff;
+    .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 16px; border: 3px solid #6a00ff; }
+
+    .row-focus { animation: rowFocus 3s ease; }
+    @keyframes rowFocus { 0%,70% { background: rgba(106,0,255,0.25); } 100% { background: transparent; } }
+
+    @media (max-width: 860px) {
+      .sidebar { width: 64px; padding: 14px 8px; }
+      .sidebar .brand { font-size: 11px; padding: 4px 4px 16px; }
+      .nav-item { justify-content: center; padding: 12px 6px; }
+      .nav-item .nav-txt { display: none; }
+      .event-txt { display: none; }
+      .main { padding: 14px; }
     }
   </style>
 </head>
@@ -501,847 +404,353 @@
   <div class="login-error" id="loginError">Wrong username or password</div>
 </div>
 
-<div class="admin-panel" id="adminPanel">
-  <div class="admin-header">
-    <div>
-      <h1>⬡ Bookings</h1>
-      <span class="badge" id="bookingCount">0 requests</span>
+<div class="admin-shell" id="adminShell">
+  <aside class="sidebar">
+    <div class="brand">⬡ GAME ZONE<br/>ADMIN</div>
+    <div class="nav-item active" data-panel="dashboard" onclick="showPanel('dashboard')"><span class="nav-dot"></span><span class="nav-txt">📊 Dashboard</span></div>
+    <div class="nav-item" data-panel="bookings" onclick="showPanel('bookings')"><span class="nav-dot"></span><span class="nav-txt">📋 Reservations</span></div>
+    <div class="nav-item" data-panel="customers" onclick="showPanel('customers')"><span class="nav-dot"></span><span class="nav-txt">👥 Customers</span></div>
+    <div class="nav-item" data-panel="suggestions" onclick="showPanel('suggestions')"><span class="nav-dot"></span><span class="nav-txt">💡 Game Suggestions</span></div>
+    <div class="nav-item" data-panel="devices" onclick="showPanel('devices')"><span class="nav-dot"></span><span class="nav-txt">🖥️ Devices</span></div>
+    <div class="nav-item" data-panel="games" onclick="showPanel('games')"><span class="nav-dot"></span><span class="nav-txt">🎮 Games</span></div>
+    <div class="nav-item" data-panel="prices" onclick="showPanel('prices')"><span class="nav-dot"></span><span class="nav-txt">📦 Packages & Prices</span></div>
+    <div class="nav-item" data-panel="offers" onclick="showPanel('offers')"><span class="nav-dot"></span><span class="nav-txt">🏷️ Offers</span></div>
+    <div class="nav-item" data-panel="website" onclick="showPanel('website')"><span class="nav-dot"></span><span class="nav-txt">🌐 Website Content</span></div>
+<div class="nav-item" data-panel="transactions" onclick="showPanel('transactions')"><span class="nav-dot"></span><span class="nav-txt">💳 Transactions</span></div>
+    <div class="nav-item" data-panel="memberships" onclick="showPanel('memberships')"><span class="nav-dot"></span><span class="nav-txt">💎 Memberships</span></div>
+    <div class="nav-item" data-panel="settings" onclick="showPanel('settings')"><span class="nav-dot"></span><span class="nav-txt">⚙️ Settings</span></div>
+    <div class="nav-item" data-panel="newfeatures" onclick="showPanel('newfeatures')"><span class="nav-dot"></span><span class="nav-txt">✨ New Features</span></div>
+    <div class="logout-row">
+      <button class="btn-logout" style="width:100%;" onclick="handleLogout()">LOGOUT</button>
     </div>
-    <div style="display:flex;align-items:center;gap:16px;">
-      <span class="live-clock" id="liveClock"></span>
-      <button class="btn-logout" onclick="handleLogout()">LOGOUT</button>
-    </div>
-  </div>
+  </aside>
 
-  <div class="pc-date-picker">
-    <label>📅 Date</label>
-    <input type="date" id="monitorDate" onchange="renderMonitor()"/>
-  </div>
-
-  <div class="pc-monitor" id="pcMonitor">
-    <div class="pc-monitor-title">🖥️ PC STATUS</div>
-  </div>
-
-  <!-- Manual PC Control -->
-  <div class="manual-control">
-    <div class="manual-title">⚡ Manual Control</div>
-    <div class="manual-row">
-      <input type="text" id="manualName" placeholder="Customer name (optional)"/>
-      <button class="btn-manual-busy" onclick="manualBusy()">🔴 Mark Busy</button>
-      <button class="btn-manual-free" onclick="manualFree()">🟢 Free PC</button>
-    </div>
-    <div class="manual-pcs" id="manualPCGrid"></div>
-  </div>
-
-  <div class="table-wrap">
-      <div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;" id="memFilterBar">
-      <button class="filter-btn active" data-filter="all" onclick="setBookingFilter('all')">📋 All</button>
-      <button class="filter-btn" data-filter="pending" onclick="setBookingFilter('pending')">⏳ Pending</button>
-      <button class="filter-btn" data-filter="active" onclick="setBookingFilter('active')">🔴 Active</button>
-      <button class="filter-btn" data-filter="completed" onclick="setBookingFilter('completed')">✓ Completed</button>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Phone</th>
-          <th>PCs</th>
-          <th>Duration</th>
-          <th>Add-on</th>
-          <th>Date</th>
-          <th>Time</th>
-          <th>Status</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="bookingsBody"></tbody>
-    </table>
-    <div class="empty-state" id="emptyState">
-      <div class="icon">📭</div>
-      <p>No booking requests yet</p>
-    </div>
-  </div>
-
-  <!-- ========== ACCOUNTS ========== -->
-  <div class="admin-section" style="margin-top:24px;">
-    <div class="admin-section-title">👥 Registered Accounts</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Name</th><th>Phone</th><th>Balance</th><th>Points</th><th>Last Login</th><th>Status</th><th></th><th></th></tr>
-        </thead>
-        <tbody id="accountsBody"></tbody>
-      </table>
-      <div class="empty-state" id="accountsEmpty">
-        <div class="icon">📭</div>
-        <p>No accounts yet</p>
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <h1 id="topbarTitle">Dashboard</h1>
+        <span class="badge" id="topbarBadge"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <span class="live-clock" id="liveClock"></span>
       </div>
     </div>
-  </div>
 
-  <!-- ========== MEMBERSHIP REQUESTS ========== -->
-  <div class="admin-section" style="margin-top:24px;">
-    <div class="admin-section-title">💎 Membership Requests</div>
-    <div class="table-wrap">
-    <div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;" id="bookingFilterBar">
+    <!-- ============ DASHBOARD ============ -->
+    <div class="panel show" id="panel-dashboard">
+      <div class="stats-row" id="dashStats"></div>
+      <div class="card">
+        <div class="card-title">🖥️ LIVE PC STATUS <span class="hint">— auto refreshes every 30s</span></div>
+        <div class="pc-date-picker">
+          <label>📅 Date</label>
+          <input type="date" id="monitorDate" onchange="renderMonitor()"/>
+        </div>
+        <div class="pc-monitor" id="pcMonitor"><div class="pc-monitor-title">🖥️ PC STATUS</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚡ MANUAL CONTROL</div>
+        <div class="manual-control" style="border-color:#333;">
+          <div class="manual-title">🔴 Mark / 🟢 Free PCs manually</div>
+          <div class="manual-row">
+            <input type="text" id="manualName" placeholder="Customer name (optional)"/>
+            <button class="btn-manual-busy" onclick="manualBusy()">🔴 Mark Busy</button>
+            <button class="btn-manual-free" onclick="manualFree()">🟢 Free PC</button>
+          </div>
+          <div class="manual-pcs" id="manualPCGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ RESERVATIONS ============ -->
+    <div class="panel" id="panel-bookings">
+      <div class="filterbar" id="memFilterBar">
+        <button class="filter-btn active" data-filter="all" onclick="setBookingFilter('all')">📋 All</button>
+        <button class="filter-btn" data-filter="pending" onclick="setBookingFilter('pending')">⏳ Pending</button>
+        <button class="filter-btn" data-filter="active" onclick="setBookingFilter('active')">🔴 Active</button>
+        <button class="filter-btn" data-filter="completed" onclick="setBookingFilter('completed')">✓ Completed</button>
+        <button class="filter-btn" data-filter="cancelled" onclick="setBookingFilter('cancelled')">✕ Cancelled</button>
+      </div>
+      <div class="toolbar-row" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0;">
+        <input type="search" id="bookingSearch" placeholder="🔍 Search name / phone / PC…" style="flex:1;min-width:200px;" oninput="renderBookings()"/>
+        <button class="btn-primary" style="padding:9px 16px;" onclick="openManualBookingForm()">➕ New Manual Reservation</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Phone</th><th>PCs</th><th>Duration</th><th>Add-on</th><th>Date</th><th>Time→End</th><th>Price</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="bookingsBody"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState"><div class="icon">📭</div><p>No booking requests yet</p></div>
+      </div>
+      <div class="card" id="manualBookingCard" style="margin-top:16px; display:none;">
+        <div class="card-title">📒 New Manual Reservation <span class="hint">— same rules as customer bookings, backend-validated</span></div>
+        <div class="manual-booking-form">
+          <div class="field">
+            <label>Customer</label>
+            <select id="mbAccount"><option value="">— Guest (no account) —</option></select>
+            <input type="text" id="mbName" placeholder="Walk-in name" style="margin-top:6px;"/>
+            <input type="text" id="mbPhone" placeholder="Walk-in phone (e.g. 01xxxxxxxxx)" style="margin-top:6px;"/>
+          </div>
+          <div class="field">
+            <label>Devices</label>
+            <div id="mbPCGrid" class="manual-pcs"></div>
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="mbDate"/>
+          </div>
+          <div class="field">
+            <label>Start time</label>
+            <input type="time" id="mbTime"/>
+          </div>
+          <div class="field">
+            <label>Duration</label>
+            <div class="dur-chips" id="mbDurChips">
+              <button class="dur-chip active" data-min="60" onclick="setMbDur(this)">1h</button>
+              <button class="dur-chip" data-min="120" onclick="setMbDur(this)">2h</button>
+              <button class="dur-chip" data-min="180" onclick="setMbDur(this)">3h</button>
+              <input type="number" id="mbDurCustom" min="15" step="15" placeholder="Other (min)" style="width:110px;" oninput="mbDurChanged()"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>Estimated price 🌐 <span id="mbEstPrice">—</span></label>
+            <label class="chk"><input type="checkbox" id="mbPayBalance"/> Pay from client balance</label>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+            <button class="btn-manual-busy" onclick="submitManualBooking()">📒 Create Reservation</button>
+            <button class="btn-manual-free" onclick="closeManualBookingForm()">Cancel</button>
+            <span id="mbConflictBox" class="hint" style="color:#ffb86c;"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CUSTOMERS ============ -->
+    <div class="panel" id="panel-customers">
+      <div class="stats-row" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));" id="custStats"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Customer</th><th>Username</th><th>Phone</th><th>Balance</th><th>Points</th><th>Fav Game</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="accountsBody"></tbody>
+        </table>
+        <div class="empty-state" id="accountsEmpty"><div class="icon">📭</div><p>No accounts yet</p></div>
+      </div>
+    </div>
+
+    <!-- ============ GAME SUGGESTIONS ============ -->
+    <div class="panel" id="panel-suggestions">
+      <div class="filterbar">
+        <button class="filter-btn active" data-sugfilter="all" onclick="setSugFilter('all')">📋 All</button>
+        <button class="filter-btn" data-sugfilter="pending" onclick="setSugFilter('pending')">⏳ Pending</button>
+        <button class="filter-btn" data-sugfilter="approved" onclick="setSugFilter('approved')">✅ Approved</button>
+        <button class="filter-btn" data-sugfilter="rejected" onclick="setSugFilter('rejected')">✕ Rejected</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Customer</th><th>Phone</th><th>Game</th><th>Image</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="suggestionsBody"></tbody>
+        </table>
+        <div class="empty-state" id="suggestionsEmpty"><div class="icon">💡</div><p>No game suggestions yet</p></div>
+      </div>
+    </div>
+
+    <!-- ============ DEVICES ============ -->
+    <div class="panel" id="panel-devices">
+      <div class="card">
+        <div class="card-title">➕ ADD DEVICE</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="field" style="flex:1;min-width:180px;">
+            <label>DEVICE NAME</label>
+            <input type="text" id="newDevName" placeholder="e.g. PC 13" style="width:100%;"/>
+          </div>
+          <div class="field" style="min-width:150px;">
+            <label>TYPE</label>
+            <select id="newDevType" style="width:100%;">
+              <option value="standard">Standard</option>
+              <option value="vip">VIP</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="addDevice()">➕ ADD DEVICE</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Device</th><th>Type</th><th>Status</th><th>Reservations</th><th>Actions</th></tr></thead>
+          <tbody id="devicesBody"></tbody>
+        </table>
+        <div class="empty-state" id="devicesEmpty"><div class="icon">🖥️</div><p>No devices yet</p></div>
+      </div>
+    </div>
+
+    <!-- ============ GAMES ============ -->
+    <div class="panel" id="panel-games"><div id="gamesEditor"></div></div>
+    <!-- ============ PACKAGES & PRICES ============ -->
+    <div class="panel" id="panel-prices">
+      <div class="card">
+        <div class="card-title">📦 BOOKABLE PACKAGES</div>
+        <div class="field-row">
+          <div class="field"><label>NAME</label><input type="text" id="pkgName" placeholder="e.g. VIP Night Pass" style="width:100%;"/></div>
+          <div class="field"><label>DEVICE TYPE</label><select id="pkgDevice" style="width:100%;"><option value="standard">Standard</option><option value="vip">VIP</option></select></div>
+          <div class="field"><label>DURATION (min)</label><input type="number" id="pkgDuration" min="15" max="1440" value="60" style="width:100%;"/></div>
+          <div class="field"><label>PRICE (EGP)</label><input type="number" id="pkgPrice" min="0" step="0.01" value="0" style="width:100%;"/></div>
+        </div>
+        <div class="field-row">
+          <div class="field" style="flex:2;"><label>DESCRIPTION</label><input type="text" id="pkgDesc" placeholder="Optional description" style="width:100%;"/></div>
+          <div class="field"><label>STATUS</label><select id="pkgStatus" style="width:100%;"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <button class="btn-primary" onclick="createPackage()">➕ ADD PACKAGE</button>
+          <button class="btn-primary" onclick="resetPackageForm()" style="background:#333;border-color:#444;">↺ RESET</button>
+          <input type="hidden" id="pkgEditId" value=""/>
+          <span id="pkgMsg" style="font-size:12px;color:#4ade80;"></span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Type</th><th>Duration</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="packagesBody"></tbody>
+        </table>
+        <div class="empty-state" id="packagesEmpty"><div class="icon">📦</div><p>No packages yet — create your first bookable package above</p></div>
+      </div>
+      <div id="pricesEditor"></div>
+    </div>
+    <!-- ============ OFFERS ============ -->
+    <div class="panel" id="panel-offers"><div id="offersEditor"></div></div>
+
+    <!-- ============ WEBSITE CONTENT ============ -->
+    <div class="panel" id="panel-website">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="siteNav">
+        <button class="filter-btn active" data-site="site" onclick="showContentEditor('site')">🏷️ Brand</button>
+        <button class="filter-btn" data-site="hero" onclick="showContentEditor('hero')">🖼️ Hero</button>
+        <button class="filter-btn" data-site="features" onclick="showContentEditor('features')">🌈 Features</button>
+        <button class="filter-btn" data-site="booking" onclick="showContentEditor('booking')">📅 Booking</button>
+        <button class="filter-btn" data-site="sections" onclick="showContentEditor('sections')">🧩 Sections</button>
+        <button class="filter-btn" data-site="contact" onclick="showContentEditor('contact')">☎️ Contact</button>
+        <button class="filter-btn" data-site="footer" onclick="showContentEditor('footer')">🦶 Footer</button>
+      </div>
+      <div id="websiteBody">
+        <div class="card"><div class="card-title">🌐 WEBSITE CONTENT</div><p style="color:rgba(255,255,255,0.5);font-size:14px;">Pick a section above to edit. Games, Packages &amp; Offers are managed from their own menu items. Changes are validated by the server, saved to the database and the live website updates instantly.</p></div>
+      </div>
+    </div>
+
+    <!-- ============ MEMBERSHIPS ============ -->
+    <div class="panel" id="panel-memberships">
+      <div class="filterbar" id="bookingFilterBar">
         <button class="filter-btn active" data-filter="all" onclick="setMemFilter('all')">📋 All</button>
         <button class="filter-btn" data-filter="pending" onclick="setMemFilter('pending')">⏳ Pending</button>
         <button class="filter-btn" data-filter="approved" onclick="setMemFilter('approved')">✅ Approved</button>
         <button class="filter-btn" data-filter="rejected" onclick="setMemFilter('rejected')">❌ Rejected</button>
       </div>
-      <table>
-        <thead>
-          <tr><th>User</th><th>Tier</th><th>Amount</th><th>Status</th><th></th></tr>
-        </thead>
-        <tbody id="membershipsBody"></tbody>
-      </table>
-      <div class="empty-state" id="membershipsEmpty">
-        <div class="icon">📭</div>
-        <p>No membership requests</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>User</th><th>Tier</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+          <tbody id="membershipsBody"></tbody>
+        </table>
+        <div class="empty-state" id="membershipsEmpty"><div class="icon">💎</div><p>No membership requests</p></div>
       </div>
     </div>
-  </div>
-  </div>
 
-  <!-- Account details modal -->
-  <div class="modal-overlay" id="accountModal" onclick="if(event.target===this)closeAccountModal()">
-    <div class="modal-box">
-      <button class="modal-close" onclick="closeAccountModal()">✕</button>
-      <img id="modalAvatar" class="modal-avatar" src="" alt="" onclick="openLightbox(this.src)"/>
-      <div class="modal-info">
-        <h2 id="modalName"></h2>
-        <div class="phone" id="modalPhone"></div>
-        <div class="row">
-          <span>🪙 <span id="modalBalance"></span></span>
-          <span>⭐ <span id="modalPoints"></span></span>
-        </div>
-        <div class="row">
-          <span class="label">Last Login</span>
-        </div>
-        <div class="muted" id="modalLastLogin"></div>
-        <div id="modalTier"></div>
+    <!-- ============ TRANSACTIONS ============ -->
+    <div class="panel" id="panel-transactions">
+      <div class="filterbar" id="txFilterBar">
+        <button class="filter-btn active" data-txfilter="all" onclick="setTxFilter('all')">📋 All</button>
+        <button class="filter-btn" data-txfilter="money" onclick="setTxFilter('money')">💸 Money</button>
+        <button class="filter-btn" data-txfilter="points" onclick="setTxFilter('points')">⭐ Points</button>
+        <button class="filter-btn" data-txfilter="admin" onclick="setTxFilter('admin')">🛠 Admin</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Customer</th><th>Type</th><th>Δ Balance</th><th>Δ Points</th><th>Reason</th><th>By</th></tr></thead>
+          <tbody id="transactionsBody"></tbody>
+        </table>
+        <div class="empty-state" id="transactionsEmpty"><div class="icon">💳</div><p>No transactions yet</p></div>
       </div>
     </div>
-  </div>
+    <!-- ============ SETTINGS ============ -->
+    <div class="panel" id="panel-settings">
+      <div class="card">
+        <div class="card-title">⚙️ CAFE SETTINGS</div>
+        <div class="field-row">
+          <div class="field"><label>PC 🖥 (EGP/h)</label><input type="number" id="setStd" min="1"/></div>
+          <div class="field"><label>VIP (EGP/h)</label><input type="number" id="setVip" min="1"/></div>
+          <div class="field"><label>Points PC/h</label><input type="number" id="setPtsStd" min="1"/></div>
+          <div class="field"><label>Points VIP/h</label><input type="number" id="setPtsVip" min="1"/></div>
+          <div class="field"><label>Points/EGP</label><input type="number" id="setPtsEgp" min="1"/></div>
+          <div class="field"><label>Deposit (EGP)</label><input type="number" id="setDeposit" min="1"/></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <button class="btn-primary" onclick="saveSettings()">💾 SAVE SETTINGS</button>
+          <span id="settingsMsg" style="font-size:12px;color:#4ade80;"></span>
+        </div>
+      </div>
+    </div>
 
-  <!-- Lightbox for enlarged avatar -->
-  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
-    <img id="lightboxImg" src="" alt=""/>
+    <!-- ============ NEW FEATURES ============ -->
+    <div class="panel" id="panel-newfeatures">
+      <div class="card">
+        <div class="card-title">✨ NEW FEATURES <span class="hint">— optional capabilities. Toggle one on and a dedicated manager appears below. Nothing is activated unless you turn it on.</span></div>
+        <div id="newFeaturesList"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Account details modal -->
+<div class="modal-overlay" id="accountModal" onclick="if(event.target===this)closeAccountModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAccountModal()">✕</button>
+    <img id="modalAvatar" class="modal-avatar" src="" alt="" onclick="openLightbox(this.src)"/>
+    <div class="modal-info">
+      <h2 id="modalName"></h2>
+      <div class="phone" id="modalPhone"></div>
+      <div class="muted" id="modalUsername" style="margin-bottom:10px;"></div>
+      <div class="row"><span>🪙 <span id="modalBalance"></span></span><span>⭐ <span id="modalPoints"></span></span></div>
+      <div class="muted" id="modalStatus" style="margin-bottom:10px;"></div>
+      <div class="muted" style="margin-bottom:2px;">🎮 <span id="modalFavGame">—</span></div>
+      <div class="muted" id="modalTier" style="margin-top:6px;margin-bottom:12px;"></div>
+      <div class="row"><span class="label">📅 Bookings</span></div>
+      <div id="modalBookings" style="max-height:170px;overflow-y:auto;font-size:12px;color:#bbb;text-align:left;margin-bottom:12px;"></div>
+      <div class="row"><span class="label">💳 Transactions</span></div>
+      <div id="modalTransactions" style="max-height:170px;overflow-y:auto;font-size:12px;color:#bbb;text-align:left;margin-bottom:12px;"></div>
+      <div class="row"><span class="label">Last Login</span></div>
+      <div class="muted" id="modalLastLogin"></div>
+    </div>
   </div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()"><img id="lightboxImg" src="" alt=""/></div>
+<div class="toast" id="toast"></div>
 
 <script>
-const ADMIN_USER = 'MEDO';
-const ADMIN_PASS = '123456';
-const ALL_PCS = ['PC 1','PC 2','PC 3','PC 4','PC 7','PC 8','PC 9','PC 10','PC 11','PC 12','VIP 1','VIP 2'];
+const ADMIN_TOKEN_KEY = 'admin_token';
 
-// ===== SHARED CLOUD STORAGE (JSONBlob, one blob per collection) with localStorage cache =====
-const CLOUD_URLS = {
-  bookings: 'https://jsonblob.com/api/jsonBlob/019fdd52-a5bd-788d-b159-260684da9139',
-  accounts: 'https://jsonblob.com/api/jsonBlob/019fdd52-a432-7877-8214-8a6611e9300e',
-  memberships: 'https://jsonblob.com/api/jsonBlob/019fdd52-a72b-7522-b8a8-3a6461ec70a3',
-};
-const STORE_KEYS = ['bookings', 'accounts', 'memberships'];
+// ===== API =====
+let API_BASE = 'http://localhost:3000';
+if (typeof location !== 'undefined' && location.host) API_BASE = location.origin;
+const WS_URL = API_BASE.replace(/^http/, 'ws') + '/ws';
 
-function _lsGet(key) {
-  try { return JSON.parse(localStorage.getItem('gzg_' + key)) || []; } catch { return []; }
-}
-function _lsSet(key, data) {
-  localStorage.setItem('gzg_' + key, JSON.stringify(data));
-}
-
-let _store = null;
-let _deleted = {};
-let _dirty = {};
-let _saveChain = Promise.resolve();
-let _refreshPromise = null;
-let _lastRefreshTime = 0;
-
-async function _loadStore() {
-  if (_store) return _store;
-  _store = {
-    bookings: _lsGet('bookings'),
-    accounts: _lsGet('accounts'),
-    memberships: _lsGet('memberships'),
-  };
-  _deleted = { bookings: [], accounts: [], memberships: [] };
-  _dirty = { bookings: false, accounts: false, memberships: false };
-  _refreshStore();
-  return _store;
-}
-
-function _mergeById(localArr, serverArr) {
-  const map = new Map();
-  for (const it of (serverArr || [])) map.set(it.id, it);
-  for (const it of (localArr || [])) map.set(it.id, it);
-  return Array.from(map.values());
-}
-
-function _refreshStore() {
-  if (!_store) return Promise.resolve();
-  if (_refreshPromise) return _refreshPromise;
-  const now = Date.now();
-  if (now - _lastRefreshTime < 2000) return Promise.resolve();
-  _lastRefreshTime = now;
-  _refreshPromise = (async () => {
-    const results = await Promise.all(STORE_KEYS.map(async (key) => {
-      try {
-        const ctl = new AbortController();
-        const timer = setTimeout(() => ctl.abort(), 4000);
-        const res = await fetch(CLOUD_URLS[key], { signal: ctl.signal, headers: { 'Accept': 'application/json' } });
-        clearTimeout(timer);
-        const data = await res.json();
-        return [key, Array.isArray(data) ? data : null];
-      } catch { return [key, null]; }
-    }));
-    for (const [key, data] of results) {
-      if (!_dirty[key] && data) {
-        _store[key] = data;
-        _lsSet(key, data);
-      }
-    }
-  })();
-  _refreshPromise.finally(() => { _refreshPromise = null; });
-  return _refreshPromise;
-}
-
-function _saveStore(key) {
-  if (!_store) return Promise.resolve();
-  _dirty[key] = true;
-  _lsSet(key, _store[key]);
-  _saveChain = _saveChain.then(async () => {
-    try {
-      for (let attempt = 0; attempt < 5; attempt++) {
-        let etag = null, serverArr = [], gotServer = false;
-        try {
-          const ctl = new AbortController();
-          const timer = setTimeout(() => ctl.abort(), 4000);
-          const res = await fetch(CLOUD_URLS[key], { signal: ctl.signal, headers: { 'Accept': 'application/json' } });
-          clearTimeout(timer);
-          etag = res.headers.get('ETag');
-          const data = await res.json();
-          if (Array.isArray(data)) { serverArr = data; gotServer = true; }
-        } catch {}
-        if (gotServer) {
-          serverArr = serverArr.filter(it => !(_deleted[key] || []).includes(it.id));
-          _store[key] = _mergeById(_store[key], serverArr);
-          _deleted[key] = (_deleted[key] || []).filter(id => !_store[key].some(it => it.id === id));
-        }
-        const ctl = new AbortController();
-        const timer = setTimeout(() => ctl.abort(), 4000);
-        const res = await fetch(CLOUD_URLS[key], { method: 'PUT', signal: ctl.signal, headers: { 'Content-Type': 'application/json', 'If-Match': gotServer ? etag : '' }, body: JSON.stringify(_store[key]) });
-        clearTimeout(timer);
-        if (res.status === 200) break;
-        if (gotServer && res.status === 412) continue;
-        break;
-      }
-    } catch {}
-    _lsSet(key, _store[key]);
-  });
-  _saveChain = _saveChain.finally(() => { _dirty[key] = false; });
-  return _saveChain;
-}
-
-let _lastBookingsData = [];
-let _lastAccountsData = [];
-
-async function getBookings() {
-  await _loadStore();
-  await _refreshStore();
-  _lastBookingsData = _store.bookings;
-  return _lastBookingsData;
-}
-async function getAccounts() {
-  await _loadStore();
-  await _refreshStore();
-  _lastAccountsData = _store.accounts;
-  return _lastAccountsData;
-}
-async function postBooking(d) { await _loadStore(); _store.bookings.push(d); await _saveStore('bookings'); return d; }
-async function postBookingsBatch(items) { await _loadStore(); for (const d of items) _store.bookings.push(d); await _saveStore('bookings'); return items; }
-async function patchBooking(id, d) { await _loadStore(); const i = _store.bookings.findIndex(x => x.id === id); if (i !== -1) { Object.assign(_store.bookings[i], d); await _saveStore('bookings'); return _store.bookings[i]; } return null; }
-async function deleteBookingSupabase(id) { await _loadStore(); _store.bookings = _store.bookings.filter(x => x.id !== id); _deleted.bookings.push(id); await _saveStore('bookings'); }
-async function deleteAccountSupabase(id) { await _loadStore(); _store.accounts = _store.accounts.filter(x => x.id !== id); _deleted.accounts.push(id); await _saveStore('accounts'); }
-async function patchAccount(id, d) { await _loadStore(); const i = _store.accounts.findIndex(x => x.id === id); if (i !== -1) { Object.assign(_store.accounts[i], d); await _saveStore('accounts'); return _store.accounts[i]; } return null; }
-function jitter() { return Math.random() * 3000; }
-
-function parsePCs(b) {
-  if (typeof b.pcs === 'string') { try { return JSON.parse(b.pcs); } catch {} }
-  if (Array.isArray(b.pcs)) return b.pcs;
-  if (b.pc_label) return b.pc_label.split(',').map(s => s.trim());
-  if (b.pc) return b.pc.split(',').map(s => s.trim());
-  return [];
-}
-
-// action debounce — prevents double clicks without delay
-const _actionBusy = {};
-function lockedAction(key, fn) {
-  if (_actionBusy[key]) return;
-  _actionBusy[key] = true;
-  Promise.resolve().then(fn).catch(() => {}).finally(() => {
-    setTimeout(() => { _actionBusy[key] = false; }, 200);
-  });
-}
-
-// === PERSISTENT LOGIN ===
-let loginAttempts = 0;
-const MAX_LOGIN_ATTEMPTS = 5;
-let loginLockoutUntil = 0;
-
-function autoLogin() {
-  if (localStorage.getItem('admin_logged') === '1') {
-    document.getElementById('loginBox').style.display = 'none';
-    document.getElementById('adminPanel').style.display = 'block';
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('monitorDate').value = today;
-    return true;
+async function api(path, opts) {
+  opts = opts || {};
+  const headers = opts.headers || {};
+  if (opts.method && opts.method !== 'GET') headers['Content-Type'] = 'application/json';
+  const token = localStorage.getItem(ADMIN_TOKEN_KEY);
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(API_BASE + path, { ...opts, headers });
+  let data = null;
+  try { data = await res.json(); } catch {}
+  if (!res.ok) {
+    const err = new Error((data && data.error) || ('HTTP ' + res.status));
+    err.status = res.status;
+    err.data = data;
+    throw err;
   }
-  return false;
-}
-
-async function handleLogin() {
-  const u = document.getElementById('username').value.trim();
-  const p = document.getElementById('password').value;
-  const err = document.getElementById('loginError');
-  const now = Date.now();
-  if (now < loginLockoutUntil) {
-    err.textContent = '⏳ Try again in ' + Math.ceil((loginLockoutUntil - now) / 1000) + 's';
-    err.style.display = 'block';
-    return;
-  }
-  if (u === ADMIN_USER && p === ADMIN_PASS) {
-    loginAttempts = 0;
-    localStorage.setItem('admin_logged', '1');
-    document.getElementById('loginBox').style.display = 'none';
-    document.getElementById('adminPanel').style.display = 'block';
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('monitorDate').value = today;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    populateManualPCs();
-    await refreshAll();
-    startPolling();
-    setTimeout(playBeep, 500);
-  } else {
-    loginAttempts++;
-    err.style.display = 'block';
-    if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
-      loginLockoutUntil = now + 30000;
-      err.textContent = '⏳ Too many attempts. Wait 30s.';
-      loginAttempts = 0;
-    } else {
-      err.textContent = 'Wrong username or password (' + (MAX_LOGIN_ATTEMPTS - loginAttempts) + ' left)';
-    }
-  }
-}
-
-function handleLogout() {
-  localStorage.removeItem('admin_logged');
-  if (pollTimer) clearInterval(pollTimer);
-  pollTimer = null;
-  if (slowTimer) clearInterval(slowTimer);
-  slowTimer = null;
-  document.getElementById('loginBox').style.display = 'block';
-  document.getElementById('adminPanel').style.display = 'none';
-  document.getElementById('username').value = '';
-  document.getElementById('password').value = '';
-  document.getElementById('loginError').style.display = 'none';
-}
-
-// === NOTIFICATION SOUND ===
-let audioCtx = null;
-
-function playBeep() {
-  try {
-    if (!audioCtx || audioCtx.state === 'suspended') return;
-    const now = audioCtx.currentTime;
-    // 4-tone ascending chime
-    const notes = [[660, 0], [880, 0.18], [1100, 0.36], [1320, 0.54]];
-    notes.forEach(([freq, t]) => {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.frequency.value = freq;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.3, now + t);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.35);
-      osc.start(now + t);
-      osc.stop(now + t + 0.35);
-    });
-  } catch {}
-}
-
-// === AUTO REFRESH ===
-let lastMaxId = 0;
-let lastMaxMembershipId = 0;
-let pollTimer = null;
-let slowTimer = null;
-let cachedBookings = [];
-
-function startPolling() {
-  if (pollTimer) clearInterval(pollTimer);
-  if (slowTimer) clearInterval(slowTimer);
-  pollTimer = setInterval(() => fastPoll(), 5000 + jitter());
-  slowTimer = setInterval(() => slowPoll(), 20000 + jitter());
-  fastPoll();
-  slowPoll();
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      clearInterval(pollTimer);
-      clearInterval(slowTimer);
-    } else {
-      fastPoll();
-      slowPoll();
-      pollTimer = setInterval(() => fastPoll(), 5000 + jitter());
-      slowTimer = setInterval(() => slowPoll(), 20000 + jitter());
-    }
-  });
-}
-
-let polling = false;
-let lastBookingsHash = '';
-async function fastPoll() {
-  if (polling) return;
-  polling = true;
-  try {
-    const bookings = await getBookings();
-    const hash = JSON.stringify(bookings.map(b => b.id + b.status));
-    if (hash === lastBookingsHash && cachedBookings.length) {
-      polling = false; return;
-    }
-    lastBookingsHash = hash;
-    cachedBookings = bookings;
-    const ids = cachedBookings.map(b => b.id);
-    const maxId = ids.length ? Math.max(...ids) : 0;
-    if (maxId > lastMaxId && lastMaxId !== 0) {
-      playBeep();
-    }
-    lastMaxId = maxId;
-    renderBookings(cachedBookings);
-    renderMonitor(cachedBookings);
-  } catch (e) { console.warn('Fast poll error:', e); }
-  finally { polling = false; }
-}
-
-let slowPolling = false;
-let lastMmsHash = '';
-async function slowPoll() {
-  if (slowPolling) return;
-  slowPolling = true;
-  try {
-    const [mms, accounts] = await Promise.all([getMemberships(), getAccounts()]);
-    const hash = JSON.stringify(mms.map(m => m.id + m.status) + '|' + accounts.map(a => a.id + ':' + (a.balance || 0) + ':' + (a.points || 0) + ':' + (a.name || '')).join(','));
-    if (hash === lastMmsHash && accounts.length) {
-      slowPolling = false; return;
-    }
-    lastMmsHash = hash;
-    const mids = mms.map(m => m.id);
-    const maxMid = mids.length ? Math.max(...mids) : 0;
-    if (maxMid > lastMaxMembershipId && lastMaxMembershipId !== 0) {
-      playBeep();
-    }
-    lastMaxMembershipId = maxMid;
-    await renderMemberships(mms, accounts);
-    await renderAccounts(accounts);
-  } catch (e) { console.warn('Slow poll error:', e); }
-  finally { slowPolling = false; }
-}
-
-async function refreshAll(bookings) {
-  if (!bookings) { try { bookings = await getBookings(); } catch { bookings = []; } }
-  cachedBookings = bookings;
-  const [accounts, mms] = await Promise.all([getAccounts(), getMemberships()]).catch(() => [[], []]);
-  renderBookings(bookings);
-  await renderMonitor(bookings);
-  await renderAccounts(accounts);
-  await renderMemberships(mms, accounts);
-}
-
-async function renderAccounts(accounts) {
-  const tbody = document.getElementById('accountsBody');
-  const empty = document.getElementById('accountsEmpty');
-  if (!accounts) { try { accounts = await getAccounts(); } catch { accounts = []; } }
-  if (accounts.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  const now = new Date();
-  tbody.innerHTML = accounts.map(a => {
-    const lastSeen = a.last_seen ? new Date(a.last_seen) : null;
-    const online = lastSeen && (now - lastSeen) < 90000;
-    const status = online ? '<span style="color:#00ff64">🟢 Online</span>' : '<span style="color:#666">⚫ Offline</span>';
-    const time = lastSeen ? lastSeen.toLocaleString('en-EG', { hour:'2-digit', minute:'2-digit', day:'numeric', month:'short' }) : 'Never';
-    const bal = a.balance || 0;
-    const pts = a.points || 0;
-    return `<tr>
-      <td>${esc(a.name)}</td>
-      <td>${esc(a.phone)}</td>
-      <td><span class="bal-display" data-id="${a.id}">🪙 ${bal}</span> <button class="btn-edit-bal" onclick="editBalance(${a.id},1)" title="Add balance">➕</button><button class="btn-edit-bal" onclick="editBalance(${a.id},-1)" title="Subtract balance">➖</button></td>
-      <td><span class="pts-display" data-id="${a.id}">⭐ ${pts}</span> <button class="btn-edit-pts" onclick="editPoints(${a.id},1)" title="Add points">➕</button><button class="btn-edit-pts" onclick="editPoints(${a.id},-1)" title="Subtract points">➖</button></td>
-      <td style="font-size:11px;color:#888">${time}</td>
-      <td>${status}</td>
-      <td><button class="btn-view" onclick="viewAccount(${a.id})">👁️</button></td>
-      <td><button class="btn-delete" onclick="if(confirm('Delete account?')){deleteAccountSupabase(${a.id});renderAccounts();}">✕</button></td>
-    </tr>`;
-  }).join('');
-}
-
-async function editBalance(id, dir) {
-  const span = document.querySelector('.bal-display[data-id="'+id+'"]');
-  if (!span) return;
-  const current = parseInt(span.textContent.replace('🪙 ','')) || 0;
-  const label = dir === 1 ? 'Add to balance' : 'Subtract from balance';
-  const val = prompt(label + ':', '0');
-  if (val === null) return;
-  const num = parseFloat(val);
-  if (isNaN(num) || num <= 0) { alert('Enter a positive number'); return; }
-  try {
-    await patchAccount(id, { balance: current + (num * dir) });
-    renderAccounts();
-  } catch { alert('Error updating balance'); }
-}
-
-async function editPoints(id, dir) {
-  const span = document.querySelector('.pts-display[data-id="'+id+'"]');
-  if (!span) return;
-  const current = parseInt(span.textContent.replace('⭐ ','')) || 0;
-  const label = dir === 1 ? 'Add points' : 'Subtract points';
-  const val = prompt(label + ':', '0');
-  if (val === null) return;
-  const num = parseInt(val);
-  if (isNaN(num) || num <= 0) { alert('Enter a positive number'); return; }
-  try {
-    await patchAccount(id, { points: current + (num * dir) });
-    renderAccounts();
-  } catch { alert('Error updating points'); }
-}
-
-let _lastMmsData = [];
-
-async function getMemberships() {
-  await _loadStore();
-  await _refreshStore();
-  _lastMmsData = _store.memberships;
-  return _lastMmsData;
-}
-async function patchMembership(id, d) { await _loadStore(); const i = _store.memberships.findIndex(x => x.id === id); if (i !== -1) { Object.assign(_store.memberships[i], d); await _saveStore('memberships'); return _store.memberships[i]; } return null; }
-
-async function renderMemberships(ms, accounts) {
-  const tbody = document.getElementById('membershipsBody');
-  const empty = document.getElementById('membershipsEmpty');
-  if (!ms) { try { ms = await getMemberships(); } catch { ms = []; } }
-  if (!accounts) { try { accounts = await getAccounts(); } catch { accounts = []; } }
-  // apply filter
-  const filtered = memFilter === 'all' ? ms : ms.filter(m => m.status === memFilter);
-  if (filtered.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  const accMap = {};
-  accounts.forEach(a => accMap[a.id] = a);
-  tbody.innerHTML = filtered.map(m => {
-    const a = accMap[m.account_id];
-    const name = a ? esc(a.name) : 'ID:' + m.account_id;
-    let actions = '';
-    if (m.status === 'pending') {
-      actions = `<button class="btn-start" onclick="lockedAction('am${m.id}',()=>approveMembership(${m.id},${m.account_id},${m.amount}))">✅ Approve</button> <button class="btn-delete" onclick="lockedAction('rm${m.id}',()=>rejectMembership(${m.id}))">✕ Reject</button>`;
-    } else if (m.status === 'approved') {
-      actions = '<span style="color:#00ff64;font-size:11px;">✅ Approved</span>';
-    } else {
-      actions = '<span style="color:#ff003c;font-size:11px;">❌ Rejected</span>';
-    }
-    const tierColors = { BRONZE:'#cd7f32', SILVER:'#c0c0c0', GOLD:'#ffd700', DIAMOND:'#00ffff' };
-    const color = tierColors[m.tier] || '#fff';
-    return `<tr><td>${name}</td><td style="color:${color};font-weight:700;">${esc(m.tier)}</td><td>💰 ${m.amount} EGP</td><td>${m.status}</td><td>${actions}</td></tr>`;
-  }).join('');
-}
-
-async function approveMembership(mid, accountId, amount) {
-  try {
-    await patchMembership(mid, { status: 'approved' });
-    const accounts = await getAccounts();
-    const acc = accounts.find(a => a.id === accountId);
-    if (acc) {
-      const newBal = (acc.balance || 0) + amount;
-      await patchAccount(accountId, { balance: newBal });
-    }
-    renderMemberships();
-    renderAccounts();
-  } catch { alert('Error approving'); }
-}
-
-async function rejectMembership(mid) {
-  try {
-    await patchMembership(mid, { status: 'rejected' });
-    renderMemberships();
-  } catch { alert('Error rejecting'); }
-}
-
-async function viewAccount(id) {
-  try {
-    const accounts = await getAccounts();
-    const acc = accounts.find(a => a.id === id);
-    if (!acc) return alert('Account not found');
-    document.getElementById('modalName').textContent = acc.name || 'Unknown';
-    document.getElementById('modalPhone').textContent = acc.phone || '';
-    document.getElementById('modalBalance').textContent = acc.balance || 0;
-    document.getElementById('modalPoints').textContent = acc.points || 0;
-    const avatar = document.getElementById('modalAvatar');
-    avatar.src = acc.avatar || 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="60" fill="#6a00ff"/><text x="60" y="76" text-anchor="middle" fill="#fff" font-family="Arial" font-size="48" font-weight="bold">' + (acc.name ? acc.name.charAt(0).toUpperCase() : '?') + '</text></svg>');
-    const lastLogin = acc.last_login ? new Date(acc.last_login).toLocaleString('en-EG', { hour:'2-digit', minute:'2-digit', day:'numeric', month:'short', year:'numeric' }) : 'Never';
-    document.getElementById('modalLastLogin').textContent = lastLogin;
-    // membership tier
-    const allMs = await getMemberships();
-    const approved = allMs.filter(m => m.account_id === acc.id && m.status === 'approved');
-    const tierEl = document.getElementById('modalTier');
-    const tierColors = { BRONZE:'#cd7f32', SILVER:'#c0c0c0', GOLD:'#ffd700', DIAMOND:'#00ffff' };
-    if (approved.length > 0) {
-      approved.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      const tier = approved[0].tier;
-      const color = tierColors[tier] || '#6a00ff';
-      tierEl.innerHTML = '<div class="modal-tier" style="border:2px solid '+color+';color:'+color+'">'+tier+'</div>';
-      avatar.style.border = '3px solid ' + color;
-    } else {
-      tierEl.innerHTML = '';
-      avatar.style.border = '3px solid #6a00ff';
-    }
-    document.getElementById('accountModal').classList.add('show');
-  } catch { alert('Error loading account'); }
-}
-
-function closeAccountModal() {
-  document.getElementById('accountModal').classList.remove('show');
-}
-
-function openLightbox(src) {
-  if (!src || src.includes('svg')) return;
-  document.getElementById('lightboxImg').src = src;
-  document.getElementById('lightbox').classList.add('show');
-}
-
-function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('show');
-}
-
-// === FILTERS ===
-let bookingFilter = 'all';
-let memFilter = 'all';
-
-function setBookingFilter(f) {
-  bookingFilter = f;
-  document.getElementById('bookingFilterBar').querySelectorAll('.filter-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.filter === f);
-  });
-  renderBookings();
-}
-
-function setMemFilter(f) {
-  memFilter = f;
-  document.getElementById('memFilterBar').querySelectorAll('.filter-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.filter === f);
-  });
-  renderMemberships();
-}
-
-// === RENDER ===
-async function renderMonitor(bookings) {
-  if (!bookings) { try { bookings = await getBookings(); } catch { bookings = []; } }
-  const date = document.getElementById('monitorDate').value;
-  const monitor = document.getElementById('pcMonitor');
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  let html = '<div class="pc-monitor-title">🖥️ PC STATUS</div>';
-  for (const pc of ALL_PCS) {
-    const active = bookings.filter(b => b.date === date && b.status === 'active' && parsePCs(b).includes(pc));
-    const busyNow = active.filter(b => {
-      const [h, m] = (b.time || '00:00').split(':').map(Number);
-      const startMin = h * 60 + m;
-      const dur = parseInt(b.duration, 10) || 60;
-      return nowMin >= startMin && nowMin < startMin + dur;
-    });
-    const upcoming = active.filter(b => {
-      const [h, m] = (b.time || '00:00').split(':').map(Number);
-      const startMin = h * 60 + m;
-      return nowMin < startMin;
-    });
-    if (busyNow.length > 0)
-      html += `<div class="pc-monitor-item"><span class="dot busy"></span>${pc} <span class="pc-time">${busyNow.map(b => `${b.time} (${b.name})`).join(', ')}</span></div>`;
-    else if (upcoming.length > 0)
-      html += `<div class="pc-monitor-item"><span class="dot upcoming"></span>${pc} <span class="pc-time upcoming-text">${upcoming.map(b => `${b.time} (${b.name})`).join(', ')}</span></div>`;
-    else
-      html += `<div class="pc-monitor-item"><span class="dot free"></span>${pc} <span class="pc-time">Free</span></div>`;
-  }
-  monitor.innerHTML = html;
-}
-
-function renderBookings(bookings) {
-  const tbody = document.getElementById('bookingsBody');
-  const empty = document.getElementById('emptyState');
-  const count = document.getElementById('bookingCount');
-  // apply filter
-  const filtered = bookingFilter === 'all' ? bookings : bookings.filter(b => b.status === bookingFilter);
-  count.textContent = filtered.length + ' request' + (filtered.length !== 1 ? 's' : '');
-  if (filtered.length === 0) {
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
-    return;
-  }
-  empty.style.display = 'none';
-  tbody.innerHTML = filtered.map((b) => {
-    if (!b.status) b.status = 'pending';
-    const pcs = parsePCs(b);
-    const conflict = findConflictInList({ ...b, pcs }, bookings, bookings.indexOf(b));
-    const conflictBadge = conflict ? '<span class="conflict-badge warn">⚠️</span>' : '<span class="conflict-badge ok">✓</span>';
-    let statusBadge, actionBtn;
-    if (b.status === 'pending') {
-      statusBadge = '<span style="color:#ffa500;font-size:11px;">⏳ Pending</span>';
-      actionBtn = `<button class="btn-start" onclick="lockedAction('s${b.id}',()=>startBooking(${b.id}))">✅ Start</button> <button class="btn-delete" onclick="lockedAction('d${b.id}',()=>deleteBookingLocal(${b.id}))">✕</button>`;
-    } else if (b.status === 'active') {
-      statusBadge = '<span style="color:var(--red);font-size:11px;">🔴 Active</span>';
-      actionBtn = `<button class="btn-free" onclick="lockedAction('f${b.id}',()=>freeBooking(${b.id}))">Free</button>`;
-    } else {
-      statusBadge = '<span style="color:#00ff64;font-size:11px;">✓ Free</span>';
-      actionBtn = `<button class="btn-delete" onclick="lockedAction('dd${b.id}',()=>deleteBookingLocal(${b.id}))">✕</button>`;
-    }
-    return `<tr style="${b.status === 'completed' ? 'opacity:0.4;' : ''}">
-      <td>${esc(b.name)}</td>
-      <td>${esc(b.phone)}</td>
-      <td>${esc(b.pc_label || b.pc)}</td>
-      <td>${esc(b.duration)}</td>
-      <td>${esc(b.addon)}</td>
-      <td>${esc(b.date)}</td>
-      <td>${esc(b.time)}</td>
-      <td>${statusBadge} ${conflictBadge}</td>
-      <td>${actionBtn}</td>
-    </tr>`;
-  }).join('');
-}
-
-function findConflictInList(booking, list, index) {
-  for (let i = 0; i < list.length; i++) {
-    if (i === index) continue;
-    const b = list[i];
-    if (b.date !== booking.date) continue;
-    const aStart = timeToMinutes(booking.time);
-    const aDur   = parseDur(booking.duration);
-    const aEnd   = aStart + aDur;
-    const bStart = timeToMinutes(b.time);
-    const bDur   = parseDur(b.duration);
-    const bEnd   = bStart + bDur;
-    for (const pc of (booking.pcs || [])) {
-      if ((parsePCs(b).includes(pc)) && aStart < bEnd && bStart < aEnd) return true;
-    }
-  }
-  return false;
-}
-
-function timeToMinutes(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
-function minutesToTime(m) { const h = Math.floor(m / 60); const min = m % 60; return String(h).padStart(2,'0') + ':' + String(min).padStart(2,'0'); }
-function parseDur(d) {
-  const n = parseInt(d, 10);
-  if (!isNaN(n) && n > 0) return n;
-  if (d.includes('30')) return 30;
-  if (d.includes('2')) return 120;
-  if (d.includes('3')) return 180;
-  if (d.includes('Unlimited')) return 1440;
-  return 60;
-}
-
-async function startBooking(id) {
-  await patchBooking(id, { status: 'active' });
-  // instant local update
-  const b = cachedBookings.find(x => x.id === id);
-  if (b) b.status = 'active';
-  renderBookings(cachedBookings);
-  renderMonitor(cachedBookings);
-}
-
-async function freeBooking(id) {
-  await patchBooking(id, { status: 'completed' });
-  const b = cachedBookings.find(x => x.id === id);
-  if (b) b.status = 'completed';
-  renderBookings(cachedBookings);
-  renderMonitor(cachedBookings);
-}
-
-async function deleteBookingLocal(id) {
-  await deleteBookingSupabase(id);
-  cachedBookings = cachedBookings.filter(x => x.id !== id);
-  renderBookings(cachedBookings);
-  renderMonitor(cachedBookings);
-}
-
-function populateManualPCs() {
-  const grid = document.getElementById('manualPCGrid');
-  if (!grid) return;
-  let html = '<button class="manual-toggle-all" onclick="toggleAllPCs()">☐ All</button>';
-  for (const pc of ALL_PCS) {
-    html += `<label class="manual-pc-item" data-pc="${pc}"><input type="checkbox" value="${pc}" onchange="this.parentElement.classList.toggle('selected',this.checked)"/>${pc}</label>`;
-  }
-  grid.innerHTML = html;
-}
-
-function getSelectedManualPCs() {
-  return [...document.querySelectorAll('#manualPCGrid input:checked')].map(c => c.value);
-}
-
-function toggleAllPCs() {
-  const checks = document.querySelectorAll('#manualPCGrid input');
-  const allChecked = [...checks].every(c => c.checked);
-  checks.forEach(c => {
-    c.checked = !allChecked;
-    c.parentElement.classList.toggle('selected', !allChecked);
-  });
-}
-
-async function manualBusy() {
-  const pcs = getSelectedManualPCs();
-  if (pcs.length === 0) { alert('Select at least one PC.'); return; }
-  const name = document.getElementById('manualName').value.trim() || 'Walk-in';
-  const today = new Date();
-  const date = today.toISOString().split('T')[0];
-  const time = today.toTimeString().split(' ')[0].slice(0, 5);
-  try {
-    await postBookingsBatch(pcs.map((pc, i) => ({
-      id: Date.now() + i,
-      name,
-      phone: 'N/A',
-      pcs: JSON.stringify([pc]),
-      pc_label: pc,
-      duration: 'Open',
-      addon: 'None',
-      date,
-      time,
-      status: 'active'
-    })));
-  } catch (e) {
-    alert('Error: ' + e.message);
-    return;
-  }
-  document.getElementById('manualName').value = '';
-  document.querySelectorAll('#manualPCGrid input:checked').forEach(c => {
-    c.checked = false; c.parentElement.classList.remove('selected');
-  });
-  fastPoll();
-}
-
-async function manualFree() {
-  const pcs = getSelectedManualPCs();
-  if (pcs.length === 0) { alert('Select at least one PC.'); return; }
-  const bookings = await getBookings();
-  const ids = [];
-  for (const pc of pcs) {
-    const active = bookings.filter(b => b.status === 'active' && parsePCs(b).includes(pc));
-    for (const b of active) ids.push(b.id);
-  }
-  if (ids.length) {
-    await _loadStore();
-    let changed = false;
-    for (const id of ids) {
-      const i = _store.bookings.findIndex(x => x.id === id);
-      if (i !== -1) { _store.bookings[i].status = 'completed'; changed = true; }
-    }
-    if (changed) await _saveStore('bookings');
-  }
-  document.querySelectorAll('#manualPCGrid input:checked').forEach(c => {
-    c.checked = false; c.parentElement.classList.remove('selected');
-  });
-  fastPoll();
+  return data;
 }
 
 function esc(s) {
@@ -1350,47 +759,1491 @@ function esc(s) {
   d.textContent = s;
   return d.innerHTML;
 }
+function toast(msg, isErr) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = 'toast'; }, 3200);
+}
 
-// live clock update every minute
-function startLiveClock() {
-  function updateClock() {
-    const el = document.getElementById('liveClock');
-    if (!el) return;
-    const now = new Date();
-    el.textContent = now.toLocaleTimeString('en-EG', { hour: '2-digit', minute: '2-digit', hour12: true });
+// ===== STATE =====
+let allBookings = [];
+let allAccounts = [];
+let allMemberships = [];
+let allDevices = [];
+let currentBookingFilter = 'all';
+let currentMemFilter = 'all';
+let currentSugFilter = 'all';
+let allSuggestions = [];
+let foundBookingId = null;
+let ws = null;
+let wsReconnectDelay = 2000;
+let lastBeepCount = -1;
+const TIER_COLORS = { BRONZE: '#cd7f32', SILVER: '#c0c0c0', GOLD: '#ffd700', DIAMOND: '#00ffff' };
+
+// ===== AUTH =====
+async function handleLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const err = document.getElementById('loginError');
+  try {
+    const r = await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+    localStorage.setItem(ADMIN_TOKEN_KEY, r.token);
+    enterPanel();
+  } catch {
+    err.style.display = 'block';
   }
-  updateClock();
-  setInterval(updateClock, 60000);
+}
+function handleLogout() {
+  const t = localStorage.getItem(ADMIN_TOKEN_KEY);
+  if (t) fetch(API_BASE + '/api/admin/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + t } }).catch(() => {});
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
+  location.reload();
 }
 
-// session timeout — auto logout after 30min inactivity
-let sessionTimer = null;
-function resetSessionTimer() {
-  if (sessionTimer) clearTimeout(sessionTimer);
-  if (localStorage.getItem('admin_logged') === '1') {
-    sessionTimer = setTimeout(() => { handleLogout(); alert('Session expired — login again.'); }, 1800000);
+// ===== NAV / PANELS =====
+function showPanel(name) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.panel === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
+  const target = document.getElementById('panel-' + name);
+  if (target) target.classList.add('show');
+  document.getElementById('topbarTitle').textContent = document.querySelector('.nav-item.active .nav-txt').textContent.trim();
+  if (name === 'dashboard') refreshDashboard();
+  if (name === 'bookings') populateManualBookingForm();
+  if (name === 'devices') refreshDevices();
+  if (name === 'customers') refreshAccounts();
+  if (name === 'suggestions') refreshSuggestions();
+  if (name === 'games') showContentEditor('games');
+  if (name === 'prices') { showContentEditor('prices'); refreshPackages(); }
+  if (name === 'offers') showContentEditor('offers');
+  if (name === 'transactions') refreshTransactions();
+  if (name === 'newfeatures') renderNewFeatures();
+}
+
+function enterPanel() {
+  document.getElementById('loginBox').style.display = 'none';
+  document.getElementById('adminShell').classList.add('show');
+  monitorDate.value = new Date().toISOString().split('T')[0];
+  startClock();
+  populateManualPCs();
+  connectRealtime();
+  refreshAll();
+  setInterval(() => { refreshBookings(); }, 20000);
+  setInterval(() => { refreshAccounts(); }, 20000);
+  setInterval(() => { refreshSuggestions(); }, 20000);
+  setInterval(() => { refreshDevices(); }, 30000);
+  setInterval(() => { refreshTransactions(); }, 30000);
+  setInterval(() => { refreshPackages(); }, 60000);
+  setInterval(renderMonitor, 30000);
+  showPanel('dashboard');
+}
+
+function startClock() {
+  const el = document.getElementById('liveClock');
+  const tick = () => {
+    const n = new Date();
+    el.textContent = n.toLocaleDateString('en-GB') + ' ' + n.toLocaleTimeString('en-US', { hour12: false });
+  };
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ===== REALTIME =====
+function connectRealtime() {
+  try { ws = new WebSocket(WS_URL); } catch { scheduleReconnect(); return; }
+  ws.onopen = () => { wsReconnectDelay = 2000; };
+  ws.onmessage = e => {
+    let m;
+    try { m = JSON.parse(e.data); } catch { return; }
+    handleEvent(m);
+  };
+  ws.onclose = () => scheduleReconnect();
+  ws.onerror = () => { try { ws.close(); } catch {} };
+}
+function scheduleReconnect() {
+  setTimeout(connectRealtime, wsReconnectDelay);
+  wsReconnectDelay = Math.min(wsReconnectDelay * 1.5, 15000);
+}
+function handleEvent(ev) {
+  switch (ev.type) {
+    case 'ping': break;
+    case 'bookings_changed':
+      foundBookingId = ev.data && ev.data.booking ? ev.data.booking.id : null;
+      refreshBookings();
+      break;
+    case 'devices_changed':
+      renderMonitor();
+      if (ev.data && ev.data.manual_state) populateManualPCs();
+      refreshDevices();
+      break;
+    case 'accounts_changed':
+      refreshAccounts();
+      break;
+    case 'presence_changed':
+      refreshAccounts();
+      break;
+    case 'memberships_changed':
+      refreshMemberships();
+      break;
+    case 'settings_changed':
+      fillSettings();
+      break;
+    case 'content_changed':
+      if (ev.data && ev.data.key) {
+        toast('✅ "' + ev.data.key + '" updated — live site refreshed');
+        refreshDashboard();
+      }
+      break;
+    case 'suggestions_changed':
+      refreshSuggestions();
+      break;
+    case 'packages_changed':
+      refreshPackages();
+      break;
   }
 }
-document.addEventListener('click', resetSessionTimer);
-document.addEventListener('keydown', resetSessionTimer);
 
-// === INIT ===
-if (autoLogin()) {
-  startLiveClock();
-  resetSessionTimer();
-  document.addEventListener('click', function initAudio() {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    setTimeout(playBeep, 200);
-    document.removeEventListener('click', initAudio);
-  }, { once: true });
-  (async () => {
-    populateManualPCs();
-    await refreshAll();
-    startPolling();
-  })();
+// ===== DATA =====
+async function refreshAll() {
+  await Promise.all([refreshBookings(), refreshAccounts(), refreshMemberships(), fillSettings(), renderMonitor(), refreshDevices(), refreshSuggestions(), refreshPackages(), refreshTransactions()]);
 }
-</script>
-<script>
+async function refreshBookings() {
+  try {
+    const r = await api('/api/bookings');
+    allBookings = r.bookings || [];
+  } catch { return; }
+  renderBookings();
+  renderMonitor();
+  const pending = (allBookings || []).filter(b => b.status === 'pending').length;
+  document.getElementById('topbarBadge').textContent = pending + ' pending · ' + (allBookings || []).length + ' bookings';
+  if (foundBookingId != null) {
+    document.getElementById('bookingsBody')?.querySelector(`tr[data-id="${foundBookingId}"]`)?.classList.add('row-focus');
+    setTimeout(() => document.querySelector('.row-focus')?.classList.remove('row-focus'), 4000);
+    if (lastBeepCount >= 0 && pending > lastBeepCount) try { new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVoAAACAgICAf39/f39/f39/f39/f39/f39/f39/f39/f38=').play(); } catch {}
+    lastBeepCount = pending;
+  }
+}
+async function refreshAccounts() {
+  try {
+    const r = await api('/api/accounts');
+    allAccounts = r.accounts || [];
+  } catch { return; }
+  renderAccounts();
+}
+async function refreshMemberships() {
+  try {
+    const r = await api('/api/memberships');
+    allMemberships = r.memberships || [];
+  } catch { return; }
+  renderMemberships();
+}
+async function refreshSuggestions() {
+  try {
+    const r = await api('/api/suggestions');
+    allSuggestions = r.suggestions || [];
+  } catch { return; }
+  renderSuggestions();
+}
+function setSugFilter(f) {
+  currentSugFilter = f;
+  document.querySelectorAll('[data-sugfilter]').forEach(b => b.classList.toggle('active', b.dataset.sugfilter === f));
+  renderSuggestions();
+}
+function renderSuggestions() {
+  const tbody = document.getElementById('suggestionsBody');
+  const empty = document.getElementById('suggestionsEmpty');
+  const list = (allSuggestions || []).filter(s => currentSugFilter === 'all' || s.status === currentSugFilter);
+  const LABEL = { pending: '⏳ Pending', approved: '✅ Approved', rejected: '✕ Rejected' };
+  const COLOR = { pending: '#facc15', approved: '#4ade80', rejected: '#ff5f7a' };
+  if (list.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = list.map(s => {
+    const actions = s.status === 'pending'
+      ? `<button class="btn-free btn-small" onclick="setSuggestionStatus('${esc(s.id)}','approved')">✓ Approve</button>
+         <button class="btn-delete btn-small" onclick="setSuggestionStatus('${esc(s.id)}','rejected')">✕ Reject</button>`
+      : '';
+    const img = s.image
+      ? `<button class="btn-view btn-small" onclick="openLightbox('${s.image.replace(/'/g, '%27')}')">🖼 View</button>`
+      : '<span style="color:#555;">—</span>';
+    return `<tr>
+      <td>${esc(s.customer_name || '—')}</td>
+      <td style="font-size:12px;">${esc(s.customer_phone || '—')}</td>
+      <td><strong>${esc(s.game_name)}</strong></td>
+      <td>${img}</td>
+      <td style="font-size:12px;color:rgba(255,255,255,0.5);">${esc(String(s.created_at || '').slice(0, 16).replace('T', ' '))}</td>
+      <td style="color:${COLOR[s.status] || '#fff'};">${LABEL[s.status] || esc(s.status)}</td>
+      <td style="white-space:nowrap;">${actions} <button class="btn-delete btn-small" onclick="deleteSuggestion('${esc(s.id)}')">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+// ===== PACKAGES MANAGER (PART 4) =====
+let allPackages = [];
+async function refreshPackages() {
+  try {
+    const r = await api('/api/packages');
+    allPackages = r.packages || [];
+  } catch { return; }
+  renderPackages();
+}
+function renderPackages() {
+  const tbody = document.getElementById('packagesBody');
+  const empty = document.getElementById('packagesEmpty');
+  if (!tbody) return;
+  const list = allPackages || [];
+  if (list.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td><strong>${esc(p.name)}</strong>${p.description ? '<div style="font-size:11px;color:rgba(255,255,255,0.45);">' + esc(p.description) + '</div>' : ''}</td>
+      <td>${p.device_type === 'vip' ? '💎 VIP' : '🖥️ Standard'}</td>
+      <td>${p.duration} min</td>
+      <td>${Number(p.price)} EGP</td>
+      <td style="color:${p.status === 'active' ? '#4ade80' : '#888'};">${p.status === 'active' ? '● Active' : '○ Inactive'}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn-view btn-small" onclick="editPackage('${esc(p.id)}')">✏️ Edit</button>
+        <button class="btn-small" style="background:${p.status === 'active' ? '#333' : '#1e3a5f'};border:1px solid ${p.status === 'active' ? '#444' : '#2563eb'};" onclick="togglePackageStatus('${esc(p.id)}')">${p.status === 'active' ? '⏸' : '▶️'}</button>
+        <button class="btn-delete btn-small" onclick="deletePackageItem('${esc(p.id)}')">🗑</button>
+      </td>
+    </tr>`).join('');
+}
+function readPkgForm() {
+  return {
+    name: document.getElementById('pkgName').value.trim(),
+    device_type: document.getElementById('pkgDevice').value,
+    duration: parseInt(document.getElementById('pkgDuration').value, 10),
+    price: parseFloat(document.getElementById('pkgPrice').value),
+    description: document.getElementById('pkgDesc').value.trim(),
+    status: document.getElementById('pkgStatus').value,
+  };
+}
+function setPkgMsg(t, ok) { const el = document.getElementById('pkgMsg'); if (el) { el.textContent = t; el.style.color = ok ? '#4ade80' : '#ff5f7a'; } }
+async function createPackage() {
+  const body = readPkgForm();
+  const id = document.getElementById('pkgEditId').value;
+  setPkgMsg('');
+  try {
+    const r = await api(id ? '/api/packages/' + id : '/api/packages', {
+      method: id ? 'PATCH' : 'POST',
+      body: JSON.stringify(body),
+    });
+    setPkgMsg(id ? '✅ Package updated' : '✅ Package added');
+    resetPackageForm();
+    refreshPackages();
+    if (r && r.invalid) Object.keys(r.invalid).forEach(k => setPkgMsg(r.invalid[k], false));
+  } catch (err) {
+    setPkgMsg((err.data && err.data.error) || '❌ Failed to save package', false);
+  }
+}
+function resetPackageForm() {
+  document.getElementById('pkgEditId').value = '';
+  document.getElementById('pkgName').value = '';
+  document.getElementById('pkgDevice').value = 'standard';
+  document.getElementById('pkgDuration').value = '60';
+  document.getElementById('pkgPrice').value = '0';
+  document.getElementById('pkgDesc').value = '';
+  document.getElementById('pkgStatus').value = 'active';
+  setPkgMsg('');
+}
+function editPackage(id) {
+  const p = (allPackages || []).find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('pkgEditId').value = p.id;
+  document.getElementById('pkgName').value = p.name;
+  document.getElementById('pkgDevice').value = p.device_type;
+  document.getElementById('pkgDuration').value = p.duration;
+  document.getElementById('pkgPrice').value = p.price;
+  document.getElementById('pkgDesc').value = p.description || '';
+  document.getElementById('pkgStatus').value = p.status;
+  setPkgMsg('Editing — press ADD PACKAGE to save changes');
+  document.getElementById('pkgName').focus();
+}
+async function togglePackageStatus(id) {
+  const p = (allPackages || []).find(x => x.id === id);
+  if (!p) return;
+  try {
+    await api('/api/packages/' + id, { method: 'PATCH', body: JSON.stringify({ status: p.status === 'active' ? 'inactive' : 'active' }) });
+    refreshPackages();
+  } catch (err) { toast((err.data && err.data.error) || '❌ Failed'); }
+}
+async function deletePackageItem(id) {
+  if (!confirm('Delete this package permanently?')) return;
+  try {
+    await api('/api/packages/' + id, { method: 'DELETE' });
+    refreshPackages();
+  } catch (err) { toast((err.data && err.data.error) || '❌ Failed'); }
+}
+
+// ===== TRANSACTIONS LEDGER (PART 4) =====
+let allTx = [];
+let currentTxFilter = 'all';
+function setTxFilter(f) {
+  currentTxFilter = f;
+  document.querySelectorAll('[data-txfilter]').forEach(b => b.classList.toggle('active', b.dataset.txfilter === f));
+  renderTransactions();
+}
+async function refreshTransactions() {
+  try {
+    const r = await api('/api/transactions');
+    allTx = r.transactions || [];
+  } catch { return; }
+  renderTransactions();
+}
+function txFilterMatch(t) {
+  if (currentTxFilter === 'all') return true;
+  if (currentTxFilter === 'money') return t.delta_balance != null && t.delta_balance !== 0;
+  if (currentTxFilter === 'points') return t.delta_points != null && t.delta_points !== 0;
+  if (currentTxFilter === 'admin') return t.type === 'admin_balance' || t.type === 'admin_points' || t.type === 'membership_credit' || t.type === 'booking_refund';
+  return true;
+}
+function renderTransactions() {
+  const tbody = document.getElementById('transactionsBody');
+  const empty = document.getElementById('transactionsEmpty');
+  if (!tbody) return;
+  const list = (allTx || []).filter(txFilterMatch);
+  if (list.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  const LABEL = {
+    booking_payment: '💳 Booking payment',
+    points_earned: '⭐ Points earned',
+    points_converted: '🔁 Points → balance',
+    admin_balance: '🛠 Admin balance',
+    admin_points: '🛠 Admin points',
+    membership_credit: '💎 Membership credit',
+    booking_refund: '↩️ Booking refund',
+  };
+  tbody.innerHTML = list.map(t => `
+    <tr>
+      <td style="font-size:12px;color:rgba(255,255,255,0.55);">${esc(String(t.created_at || '').slice(0, 16).replace('T', ' '))}</td>
+      <td><strong>${esc(t.customer_name || '—')}</strong></td>
+      <td style="font-size:13px;">${LABEL[t.type] || esc(t.type)}</td>
+      <td style="color:${t.delta_balance > 0 ? '#4ade80' : t.delta_balance < 0 ? '#ff5f7a' : 'rgba(255,255,255,0.4)'};">${t.delta_balance == null ? '—' : (t.delta_balance > 0 ? '+' : '') + Number(t.delta_balance)}</td>
+      <td style="color:${t.delta_points > 0 ? '#ffd700' : t.delta_points < 0 ? '#ff5f7a' : 'rgba(255,255,255,0.4)'};">${t.delta_points == null ? '—' : (t.delta_points > 0 ? '+' : '') + Number(t.delta_points)}</td>
+      <td style="font-size:12px;color:rgba(255,255,255,0.55);">${esc(t.reason || '—')}</td>
+      <td style="font-size:12px;">${esc(t.performed_by || '—')}</td>
+    </tr>`).join('');
+}
+async function setSuggestionStatus(id, status) {
+  try {
+    const r = await api('/api/suggestions/' + id, { method: 'PATCH', body: JSON.stringify({ status }) });
+    if (status === 'approved') {
+      const note = r.note;
+      if (note && note.already_in_library) toast('✅ Approved — "' + note.name + '" is already in the library (' + note.tab + ' tab)');
+      else toast('✅ Approved — add it via the Games manager');
+    } else {
+      toast('✕ Suggestion rejected');
+    }
+    refreshSuggestions();
+  } catch (e) { toast((e.data && e.data.error) || 'Error', true); }
+}
+async function deleteSuggestion(id) {
+  if (!confirm('Delete this suggestion?')) return;
+  try {
+    await api('/api/suggestions/' + id, { method: 'DELETE' });
+    toast('🗑 Deleted');
+    refreshSuggestions();
+  } catch (e) { toast((e.data && e.data.error) || 'Error', true); }
+}
+async function refreshDevices() {
+  try {
+    const r = await api('/api/devices?date=' + encodeURIComponent(monitorDate ? monitorDate.value || new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0]));
+    allDevices = r.devices || [];
+  } catch { return; }
+  renderDevices();
+}
+
+async function fillSettings() {
+  try {
+    const r = await api('/api/settings');
+    const s = r.settings || {};
+    setVal('setStd', s.standard_price_per_hour); setVal('setVip', s.vip_price_per_hour);
+    setVal('setPtsStd', s.points_std_per_hour); setVal('setPtsVip', s.points_vip_per_hour);
+    setVal('setPtsEgp', s.points_per_egp); setVal('setDeposit', s.deposit);
+  } catch {}
+}
+function setVal(id, v) { const el = document.getElementById(id); if (el && v != null) el.value = v; }
+async function saveSettings() {
+  try {
+    await api('/api/settings', {
+      method: 'PUT',
+      body: JSON.stringify({
+        standard_price_per_hour: +document.getElementById('setStd').value,
+        vip_price_per_hour: +document.getElementById('setVip').value,
+        points_std_per_hour: +document.getElementById('setPtsStd').value,
+        points_vip_per_hour: +document.getElementById('setPtsVip').value,
+        points_per_egp: +document.getElementById('setPtsEgp').value,
+        deposit: +document.getElementById('setDeposit').value,
+      }),
+    });
+    const msg = document.getElementById('settingsMsg');
+    msg.textContent = '✅ Saved — live site updated';
+    msg.style.color = '#4ade80';
+    setTimeout(() => msg.textContent = '', 3000);
+  } catch {
+    const msg = document.getElementById('settingsMsg');
+    msg.textContent = '❌ Error saving';
+    msg.style.color = '#ff003c';
+    setTimeout(() => { msg.textContent = ''; }, 3000);
+  }
+}
+
+// ===== DASHBOARD =====
+async function refreshDashboard() {
+  const now = new Date().toISOString().split('T')[0];
+  try {
+    const [dev, bk, acc, onlineAcc] = await Promise.all([
+      api('/api/devices?date=' + now).catch(() => null),
+      api('/api/bookings').catch(() => null),
+      api('/api/accounts').catch(() => null),
+    ]);
+    const devs = (dev && dev.devices) || [];
+    const bookings = (bk && bk.bookings) || [];
+    const accounts = (acc && acc.accounts) || [];
+    const online = accounts.filter(a => a.online).length;
+    const pending = bookings.filter(b => b.status === 'pending').length;
+    const active = bookings.filter(b => b.status === 'active').length;
+    const busy = devs.filter(d => d.color === 'red').length;
+    const completedSpend = bookings.filter(b => b.status === 'completed').reduce((s, b) => s + (Number(b.balance_deducted) || 0), 0);
+    const vipCount = devs.filter(d => d.type === 'vip').length;
+    document.getElementById('dashStats').innerHTML = [
+      { lbl: 'Pending Requests', num: pending, cls: 'yellow' },
+      { lbl: 'Active Sessions', num: active, cls: 'red' },
+      { lbl: 'Online Players', num: online, cls: 'green' },
+      { lbl: 'Registered Customers', num: accounts.length, cls: 'purple' },
+      { lbl: 'Devices (VIP ' + vipCount + ')', num: devs.length, cls: 'purple' },
+      { lbl: 'Busy Right Now', num: busy, cls: 'red' },
+      { lbl: 'Revenue (completed)', num: completedSpend + ' EGP', cls: 'green' },
+    ].map(s => '<div class="stat-card ' + s.cls + '"><div class="num">' + s.num + '</div><div class="lbl">' + s.lbl + '</div></div>').join('');
+  } catch {}
+}
+
+// ===== DEVICES =====
+function renderDevices() {
+  const tbody = document.getElementById('devicesBody');
+  const empty = document.getElementById('devicesEmpty');
+  if (!tbody) return;
+  const devs = allDevices || [];
+  if (devs.length === 0) { tbody.innerHTML = ''; if (empty) empty.style.display = 'block'; return; }
+  if (empty) empty.style.display = 'none';
+  tbody.innerHTML = devs.map(d => {
+    const statusLabel = d.color === 'red' ? (d.manual ? '🔴 Manual busy' : '🔴 In use') : d.color === 'yellow' ? '🟡 Reserved soon' : '🟢 Free';
+    const mt = d.manual ? ' · ' + esc(d.manualname || '') : '';
+    return `<tr data-pc="${esc(d.pc)}">
+      <td style="font-weight:700;">🖥️ ${esc(d.pc)}</td>
+      <td><span class="modal-tier" style="font-size:10px;padding:2px 10px;background:${d.type === 'vip' ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.06)'};border:1px solid ${d.type === 'vip' ? '#ffd700' : 'rgba(255,255,255,0.2)'};color:${d.type === 'vip' ? '#ffd700' : '#bbb'};">${d.type === 'vip' ? '👑 VIP' : 'Standard'}</span></td>
+      <td style="font-size:12px;">${statusLabel}${mt}</td>
+      <td>${d.bookings ? d.bookings.length : 0}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn-view btn-small" onclick="viewDeviceReservations('${esc(d.pc).replace(/'/g, "\\u0027")}')">📅</button>
+        <button class="btn-ghost btn-small" onclick="renameDevice('${esc(d.pc).replace(/'/g, "\\u0027")}')">✏️</button>
+        <button class="btn-ghost btn-small" onclick="toggleDeviceType('${esc(d.pc).replace(/'/g, "\\u0027")}')">${d.type === 'vip' ? '→ Std' : '→ VIP'}</button>
+        <button class="btn-manual-busy btn-small" onclick="manualBusyFor('${esc(d.pc).replace(/'/g, "\\u0027")}')">🔴 Occupy</button>
+        <button class="btn-manual-free btn-small" onclick="manualFreeFor('${esc(d.pc).replace(/'/g, "\\u0027")}')">🟢 Release</button>
+        <button class="btn-delete btn-small" onclick="deleteDevice('${esc(d.pc).replace(/'/g, "\\u0027")}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+async function addDevice() {
+  const pc = document.getElementById('newDevName').value.trim();
+  const type = document.getElementById('newDevType').value;
+  if (!pc) { toast('Enter a device name', true); return; }
+  try {
+    await api('/api/devices', { method: 'POST', body: JSON.stringify({ pc, type }) });
+    document.getElementById('newDevName').value = '';
+    toast('✅ Device "' + pc + '" added');
+    await refreshDevices();
+  } catch (e) { toast((e.data && e.data.error) || 'Error adding device', true); }
+}
+async function renameDevice(pc) {
+  const n = prompt('New name for device ' + pc + ':', pc);
+  if (n == null || n.trim() === '' || n.trim() === pc) return;
+  try {
+    await api('/api/devices/' + encodeURIComponent(pc), { method: 'PATCH', body: JSON.stringify({ pc: n.trim() }) });
+    toast('✅ Renamed to "' + n.trim() + '"');
+    await refreshDevices();
+  } catch (e) { toast((e.data && e.data.error) || 'Error renaming device', true); }
+}
+async function toggleDeviceType(pc) {
+  const d = (allDevices || []).find(x => x.pc === pc);
+  if (!d) return;
+  const next = d.type === 'vip' ? 'standard' : 'vip';
+  try {
+    await api('/api/devices/' + encodeURIComponent(pc), { method: 'PATCH', body: JSON.stringify({ type: next }) });
+    toast('✅ ' + pc + ' is now ' + (next === 'vip' ? 'VIP 👑' : 'Standard'));
+    await refreshDevices();
+  } catch (e) { toast((e.data && e.data.error) || 'Error changing type', true); }
+}
+async function deleteDevice(pc) {
+  if (!confirm('Delete device "' + pc + '" permanently?')) return;
+  try {
+    await api('/api/devices/' + encodeURIComponent(pc), { method: 'DELETE' });
+    toast('✅ Device deleted');
+    await refreshDevices();
+  } catch (e) {
+    const msg = (e.data && e.data.error) || 'Error deleting device';
+    toast(msg, true);
+    if (e.status === 422 || e.status === 409) alert(msg);
+  }
+}
+async function viewDeviceReservations(pc) {
+  try {
+    const r = await api('/api/devices/' + encodeURIComponent(pc) + '/bookings');
+    const list = r.bookings || [];
+    if (list.length === 0) { toast('No reservations for ' + pc); return; }
+    const lines = list.map(b => `${b.status} · ${esc(pcsParse(b.pcs).join(', '))} · ${esc(b.date)} ${esc(b.time)} (${b.duration || 'Open'} min) · ${esc(b.name)}`).join('\\n');
+    alert('Reservations for ' + pc + ':\\n\\n' + lines);
+  } catch (e) { toast((e.data && e.data.error) || 'Error', true); }
+}
+function manualBusyFor(pc) {
+  selectedManualPCs = new Set([pc]);
+  manualBusy();
+}
+function manualFreeFor(pc) {
+  selectedManualPCs = new Set([pc]);
+  manualFree();
+}
+
+// ===== PC MONITOR =====
+async function renderMonitor() {
+  const el = document.getElementById('pcMonitor');
+  if (!el) return;
+  const date = document.getElementById('monitorDate').value || new Date().toISOString().split('T')[0];
+  let devices = [];
+  try {
+    const r = await api('/api/devices?date=' + encodeURIComponent(date));
+    devices = r.devices || [];
+  } catch { devices = []; }
+  if (el.querySelector('.pc-monitor-title')) {
+    el.querySelector('.pc-monitor-title').textContent = '🖥️ PC STATUS — ' + (date || 'today');
+  } else {
+    const t = document.createElement('div');
+    t.className = 'pc-monitor-title';
+    t.textContent = '🖥️ PC STATUS — ' + (date || 'today');
+    el.appendChild(t);
+  }
+  el.querySelectorAll('.pc-monitor-item').forEach(n => n.remove());
+  for (const d of devices) {
+    const item = document.createElement('div');
+    item.className = 'pc-monitor-item';
+    const dot = document.createElement('span');
+    dot.className = 'dot ' + (d.color === 'red' ? 'busy' : d.color === 'yellow' ? 'upcoming' : 'free');
+    item.appendChild(dot);
+    const name = document.createElement('span');
+    name.textContent = d.pc + (d.type === 'vip' ? ' 👑' : '');
+    item.appendChild(name);
+    const t = document.createElement('span');
+    t.className = 'pc-time';
+    t.innerHTML = d.label ? esc(d.label) : '&nbsp;';
+    item.appendChild(t);
+    if (d.color === 'yellow') {
+      const u = document.createElement('span');
+      u.className = 'upcoming-text';
+      u.textContent = '⏳';
+      item.appendChild(u);
+    }
+    el.appendChild(item);
+  }
+}
+
+// ===== MANUAL CONTROL =====
+let selectedManualPCs = new Set();
+async function populateManualPCs() {
+  const grid = document.getElementById('manualPCGrid');
+  if (!grid) return;
+  let devices = [];
+  try {
+    const r = await api('/api/devices?date=' + encodeURIComponent(document.getElementById('monitorDate').value || new Date().toISOString().split('T')[0]));
+    devices = r.devices || [];
+  } catch { devices = []; }
+  grid.innerHTML = devices.map(pc => {
+    const dev = devices.find(d => d.pc === pc);
+    const manual = dev && dev.manual;
+    return `<label class="manual-pc-item ${selectedManualPCs.has(pc) ? 'selected' : ''}" ${manual ? 'title="Currently manual busy"' : ''}>
+      <input type="checkbox" value="${esc(pc)}" ${selectedManualPCs.has(pc) ? 'checked' : ''} onchange="toggleManualPC('${esc(pc).replace(/'/g, '\\u0027')}', this.checked)"/>
+      ${esc(pc)}${manual ? ' 🔴' : ''}
+    </label>`;
+  }).join('');
+}
+function toggleManualPC(name, checked) {
+  if (checked) selectedManualPCs.add(name); else selectedManualPCs.delete(name);
+}
+async function manualBusy() {
+  if (selectedManualPCs.size === 0) { toast('Select at least one PC first', true); return; }
+  const name = document.getElementById('manualName').value.trim();
+  const payload = pcs => ({ method: 'POST', body: JSON.stringify({ pcs, name: name || 'Manual', force: false }) });
+  try {
+    await api('/api/devices/manual-busy', payload([...selectedManualPCs]));
+    document.getElementById('manualName').value = '';
+    selectedManualPCs.clear();
+    toast('✅ PC(s) marked busy');
+  } catch (e) {
+    if (e && e.data && e.data.manual_conflict && Array.isArray(e.data.conflicts)) {
+      const detail = e.data.conflicts.map(c => esc(c.pc) + ' (' + esc(c.booking && c.booking.name) + ' · ' + esc(c.booking && c.booking.time) + ')').join(', ');
+      if (confirm(`⚠ ${e.data.conflicts.length} device(s) have a FUTURE RESERVATION:\n${detail}\n\nManual occupation would cover it. Still mark busy? (staff override)`)) {
+        try {
+          await api('/api/devices/manual-busy', { method: 'POST', body: JSON.stringify({ pcs: [...selectedManualPCs], name: name || 'Manual', force: true }) });
+          document.getElementById('manualName').value = '';
+          selectedManualPCs.clear();
+          toast('✅ PC(s) marked busy (override)');
+        } catch (e2) { toast((e2.data && e2.data.error) || 'Error marking busy', true); }
+      }
+    } else { toast((e.data && e.data.error) || 'Error marking busy', true); }
+  }
+}
+async function manualFree() {
+  if (selectedManualPCs.size === 0) { toast('Select at least one PC first', true); return; }
+  try {
+    await api('/api/devices/manual-free', { method: 'POST', body: JSON.stringify({ pcs: [...selectedManualPCs] }) });
+    selectedManualPCs.clear();
+    toast('✅ PC(s) freed');
+  } catch (e) { toast((e.data && e.data.error) || 'Error freeing', true); }
+}
+
+// ===== BOOKINGS =====
+function setBookingFilter(f) {
+  currentBookingFilter = f;
+  document.querySelectorAll('#memFilterBar .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  renderBookings();
+}
+function setMemFilter(f) {
+  currentMemFilter = f;
+  document.querySelectorAll('#bookingFilterBar .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  renderMemberships();
+}
+function pcsParse(s) {
+  try { return JSON.parse(s || '[]'); } catch { return s ? [s] : []; }
+}
+function computeConflicts(bookings) {
+  const groups = {};
+  for (const b of bookings) {
+    if (!['pending', 'active'].includes(b.status)) continue;
+    for (const p of pcsParse(b.pcs)) { groups[p] = groups[p] || []; groups[p].push(b); }
+  }
+  const conflicts = [];
+  for (const b of bookings) {
+    if (b.status !== 'pending') continue;
+    for (const p of pcsParse(b.pcs)) {
+      for (const o of groups[p] || []) {
+        if (o.id !== b.id) { conflicts.push(b.id); break; }
+      }
+    }
+  }
+  return conflicts;
+}
+function bookingEnd(b) {
+  const parts = String(b.time || '00:00').split(':');
+  const endM = (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0) + (Number(b.duration) || 0);
+  const dh = Math.floor(endM / 60) % 24;
+  const dm = endM % 60;
+  return ((dh < 10 ? '0' : '') + dh + ':' + (dm < 10 ? '0' : '') + dm) + (endM >= 1440 ? ' +1' : '');
+}
+function renderBookings() {
+  const list = allBookings || [];
+  const q = (document.getElementById('bookingSearch')?.value || '').trim().toLowerCase();
+  let filtered = currentBookingFilter === 'all' ? list : list.filter(b => b.status === currentBookingFilter);
+  if (q) filtered = filtered.filter(b => [b.name, b.phone, pcsParse(b.pcs).join(' ')].join(' ').toLowerCase().includes(q));
+  const conflicts = computeConflicts(list);
+  const tbody = document.getElementById('bookingsBody');
+  const empty = document.getElementById('emptyState');
+  const LABEL = { pending: '⏳ Pending', active: '🔴 Active', completed: '✓ Completed', cancelled: '✕ Cancelled' };
+  if (filtered.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = filtered.map(b => {
+    const pcStr = pcsParse(b.pcs).join(', ');
+    const isConflict = conflicts.includes(b.id);
+    const paidTxt = Number(b.balance_paid) > 0 ? ' <span class="paid-tag">paid ' + Number(b.balance_paid) + '</span>' : '';
+    let actions = '';
+    if (b.status === 'pending') {
+      actions += `<button class="btn-start btn-small" onclick="startBooking('${b.id}')">▶ Start</button>`;
+      actions += `<button class="btn-free btn-small" onclick="freeBooking('${b.id}')">✓ Free</button>`;
+    }
+    if (b.status === 'active') actions += `<button class="btn-free btn-small" onclick="freeBooking('${b.id}')">✓ End/Free</button>`;
+    if (b.status === 'pending' || b.status === 'active') {
+      actions += `<button class="btn-cancel btn-small" title="Cancel (refunds balance if paid)" onclick="cancelBooking('${b.id}')">✕ Cancel</button>`;
+      actions += `<button class="btn-delete btn-small" title="Delete — use Cancel for reservations" onclick="deleteBookingLocal('${b.id}')">🗑</button>`;
+    }
+    return `<tr data-id="${esc(b.id)}">
+      <td>${esc(b.name)}</td><td>${esc(b.phone)}</td>
+      <td>${esc(pcStr)} <span class="conflict-badge ${isConflict ? 'warn' : 'ok'}">${isConflict ? '⚠ conflict' : '✓ ok'}</span></td>
+      <td>${b.duration || 'Open'}</td><td>${esc(b.addon || '—')}</td>
+      <td>${esc(b.date)}</td><td>${esc(b.time)} → ${bookingEnd(b)}</td>
+      <td>${esc(b.price == null ? '—' : Number(b.price) + ' EGP')}${paidTxt}</td>
+      <td>${LABEL[b.status] || esc(b.status)}</td>
+      <td style="white-space:nowrap;">${actions}</td>
+    </tr>`;
+  }).join('');
+}
+async function cancelBooking(id) {
+  const b = (allBookings || []).find(x => x.id === id);
+  const paid = b && Number(b.balance_paid) > 0;
+  if (!confirm('Cancel this reservation?' + (paid ? '\n\nClient paid ' + Number(b.balance_paid) + ' EGP — it will be refunded to their balance.' : ''))) return;
+  try {
+    await api('/api/bookings/' + id, { method: 'PATCH', body: JSON.stringify({ status: 'cancelled' }) });
+    toast(paid ? '✕ Cancelled — balance refunded to client' : '✕ Booking cancelled');
+  } catch (e) { toast((e.data && e.data.error) || 'Error cancelling', true); }
+}
+
+// ===== MANUAL RESERVATION FORM (PART 5) =====
+const selectedMbPCs = new Set();
+let mbDur = 60;
+let mbChipDur = 60;
+let mbSettings = {};
+function openManualBookingForm() {
+  document.getElementById('manualBookingCard').style.display = 'block';
+  populateManualBookingForm();
+  document.getElementById('manualBookingCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function closeManualBookingForm() { document.getElementById('manualBookingCard').style.display = 'none'; }
+async function populateManualBookingForm() {
+  const accSel = document.getElementById('mbAccount');
+  if (accSel && allAccounts.length) {
+    accSel.innerHTML = '<option value="">— Guest (no account) —</option>' + allAccounts.map(a => `<option value="${esc(a.id)}">${esc(a.name)} · ${esc(a.phone)} (bal ${Number(a.balance) || 0})</option>`).join('');
+  }
+  const grid = document.getElementById('mbPCGrid');
+  const devr = await api('/api/devices?date=' + encodeURIComponent(todayInput()));
+  const devices = (devr && devr.devices) || [];
+  mbSettings = (devr && devr.settings) || {};
+  if (grid) {
+    grid.innerHTML = devices.map(d => `<label class="manual-pc-item ${selectedMbPCs.has(d.pc) ? 'selected' : ''}">
+      <input type="checkbox" value="${esc(d.pc)}" ${selectedMbPCs.has(d.pc) ? 'checked' : ''} onchange="toggleMbPC('${esc(d.pc).replace(/'/g, '\\u0027')}', this.checked)"/>
+      ${esc(d.pc)}${d.type === 'vip' ? ' 👑' : ''}
+    </label>`).join('');
+  }
+  const dateEl = document.getElementById('mbDate');
+  if (!dateEl.value) dateEl.value = todayInput();
+  const timeEl = document.getElementById('mbTime');
+  if (!timeEl.value) {
+    const d = new Date(Date.now() + 30 * 60000);
+    timeEl.value = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+  updateMbEstimate();
+}
+function todayInput() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function toggleMbPC(name, checked) {
+  if (checked) selectedMbPCs.add(name); else selectedMbPCs.delete(name);
+  document.querySelectorAll('#mbPCGrid input[type="checkbox"]').forEach(c => {
+    const n = unesc(c.value);
+    c.closest('.manual-pc-item').classList.toggle('selected', selectedMbPCs.has(n));
+  });
+  document.getElementById('mbConflictBox').textContent = '';
+  updateMbEstimate();
+}
+function unesc(s) { const d = document.createElement('div'); d.innerHTML = s; return d.textContent || ''; }
+function setMbDur(btn) {
+  mbDur = mbChipDur = parseInt(btn.dataset.min, 10) || 60;
+  document.querySelectorAll('#mbDurChips .dur-chip').forEach(b => b.classList.toggle('active', b === btn));
+  document.getElementById('mbDurCustom').value = '';
+  document.getElementById('mbConflictBox').textContent = '';
+  updateMbEstimate();
+}
+function mbDurChanged() {
+  const v = parseInt(document.getElementById('mbDurCustom').value, 10);
+  mbDur = (Number.isFinite(v) && v > 0) ? v : mbChipDur;
+  document.querySelectorAll('#mbDurChips .dur-chip').forEach(b => b.classList.remove('active'));
+  updateMbEstimate();
+}
+function updateMbEstimate() {
+  const el = document.getElementById('mbEstPrice');
+  if (!el) return;
+  const pcs = [...selectedMbPCs];
+  const std = Number(mbSettings.standard_price_per_hour) || 30;
+  const vip = Number(mbSettings.vip_price_per_hour) || 40;
+  const mins = mbDur || 60;
+  if (pcs.length === 0) { el.textContent = '—'; return; }
+  const sum = pcs.reduce((s, pc) => {
+    let t = 'standard';
+    document.querySelectorAll('#mbPCGrid input[type="checkbox"]').forEach(c => {
+      if (unesc(c.value) === pc) t = c.closest('label').textContent.includes('👑') ? 'vip' : 'standard';
+    });
+    return s + (t === 'vip' ? vip : std) * mins / 60;
+  }, 0);
+  el.textContent = sum.toFixed(0) + ' EGP (server confirms)';
+}
+async function submitManualBooking() {
+  const pcs = [...selectedMbPCs];
+  const accId = parseInt(document.getElementById('mbAccount').value, 10) || 0;
+  const name = document.getElementById('mbName').value.trim();
+  const phone = document.getElementById('mbPhone').value.trim();
+  const date = document.getElementById('mbDate').value;
+  const time = document.getElementById('mbTime').value;
+  const pay = document.getElementById('mbPayBalance').checked;
+  const body = { pcs, duration: mbDur || 60, date, time, addon: 'None', pay_with_balance: pay };
+  if (accId) body.account_id = accId;
+  else { if (!name || !phone) { toast('Enter walk-in name and phone (or pick a customer)', true); return; } body.name = name; body.phone = phone; }
+  if (!pcs.length) { toast('Select at least one PC', true); return; }
+  if (!date || !time) { toast('Date and start time are required', true); return; }
+  const [h, m] = time.split(':').map(Number);
+  const startMs = new Date(date + 'T' + time).getTime();
+  if (isNaN(startMs) || startMs + (mbDur || 60) * 60000 <= Date.now()) { toast('Start time must be in the future', true); return; }
+  document.getElementById('mbConflictBox').textContent = '';
+  try {
+    const r = await api('/api/bookings', { method: 'POST', body: JSON.stringify(body) });
+    toast('📒 Reservation created — ' + esc(r.booking && r.booking.name) + ' · ' + (r.price && r.price.total) + ' EGP');
+    selectedMbPCs.clear();
+    closeManualBookingForm();
+    refreshBookings();
+  } catch (e) {
+    if (e && e.status === 409 && Array.isArray(e.data && e.data.conflicts)) {
+      const box = document.getElementById('mbConflictBox');
+      box.textContent = '⚠ Conflict: ' + e.data.conflicts.map(c => c.pc + ' (' + c.name + ' · ' + c.start + ')').join('; ') + ' — change PC/time to continue';
+    } else if (e && e.status === 402) {
+      toast('Insufficient balance for pay-from-balance — uncheck and retry (server did not create it)', true);
+    } else { toast((e.data && e.data.error) || 'Error creating reservation', true); }
+  }
+}
+async function startBooking(id) {
+  try { await api('/api/bookings/' + id, { method: 'PATCH', body: JSON.stringify({ status: 'active' }) }); }
+  catch { toast('Error starting booking', true); }
+}
+async function freeBooking(id) {
+  try { await api('/api/bookings/' + id, { method: 'PATCH', body: JSON.stringify({ status: 'completed' }) }); }
+  catch { toast('Error ending booking', true); }
+}
+async function deleteBookingLocal(id) {
+  if (!confirm('Delete this booking?')) return;
+  try { await api('/api/bookings/' + id, { method: 'DELETE' }); }
+  catch { toast('Error deleting booking', true); }
+}
+
+// ===== ACCOUNTS / CUSTOMERS =====
+function renderAccounts() {
+  const tbody = document.getElementById('accountsBody');
+  const empty = document.getElementById('accountsEmpty');
+  const accounts = allAccounts || [];
+  const stats = document.getElementById('custStats');
+  if (stats) {
+    const online = accounts.filter(a => a.online).length;
+    const totalBal = accounts.reduce((s, a) => s + (Number(a.balance) || 0), 0);
+    const totalPts = accounts.reduce((s, a) => s + (Number(a.points) || 0), 0);
+    stats.innerHTML = [
+      { lbl: 'Customers', num: accounts.length, cls: 'purple' },
+      { lbl: 'Online Now', num: online, cls: 'green' },
+      { lbl: 'Total Balances', num: totalBal + ' EGP', cls: 'yellow' },
+      { lbl: 'Total Points', num: totalPts, cls: 'red' },
+    ].map(s => '<div class="stat-card ' + s.cls + '"><div class="num">' + s.num + '</div><div class="lbl">' + s.lbl + '</div></div>').join('');
+  }
+  if (accounts.length === 0) { if (tbody) tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = accounts.map(a => {
+    const approved = (allMemberships || []).filter(m => m.account_id === a.id && m.status === 'approved').sort((x, y) => new Date(y.created_at) - new Date(x.created_at));
+    const tier = approved[0] ? approved[0].tier : null;
+    const tm = tier ? ` <span class="modal-tier" style="font-size:9px;padding:2px 8px;background:${TIER_COLORS[tier]}22;border:1px solid ${TIER_COLORS[tier]};color:${TIER_COLORS[tier]};">${esc(tier)}</span>` : '';
+    const online = a.online;
+    return `<tr data-acc="${esc(a.id)}">
+      <td><span style="display:inline-flex;align-items:center;gap:8px;"><img src="${a.avatar ? a.avatar : ''}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;background:#222;" onerror="this.style.display='none'"/> <span>${esc(a.name)}${tm}</span></span></td>
+      <td style="font-size:12px;color:rgba(255,255,255,0.5);">@${esc(a.username || a.phone)}</td>
+      <td>${esc(a.phone)}</td>
+      <td><span id="bal_${esc(a.id)}">${a.balance}</span><br/><button class="btn-edit-bal" onclick="addBalance('${esc(a.id)}')">＋</button> <button class="btn-edit-bal" onclick="subBalance('${esc(a.id)}')">－</button> <button class="btn-edit-bal" onclick="setBalance('${esc(a.id)}')">=</button></td>
+      <td><span id="pts_${esc(a.id)}">${a.points}</span><br/><button class="btn-edit-bal" onclick="addPoints('${esc(a.id)}')">＋</button> <button class="btn-edit-bal" onclick="subPoints('${esc(a.id)}')">－</button> <button class="btn-edit-bal" onclick="setPoints('${esc(a.id)}')">=</button></td>
+      <td style="font-size:12px;">${esc(a.favorite_game || '—')}</td>
+      <td style="font-size:12px;">${online ? '<span style="color:#00ff64;">● online</span>' : '<span style="color:#666;">○ offline</span>'}</td>
+      <td style="white-space:nowrap;"><button class="btn-view btn-small" onclick="viewAccount('${esc(a.id)}')">👁 View</button> <button class="btn-delete btn-small" onclick="deleteAccountFun('${esc(a.id)}')">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+async function balAction(id, action, label, sign) {
+  const acc = (allAccounts || []).find(a => String(a.id) === String(id));
+  if (!acc) return;
+  const v = prompt(label + ' for ' + acc.name + ' (current ' + acc.balance + '):', '');
+  if (v == null) return;
+  const n = parseFloat(v) * (sign || 1);
+  if (isNaN(n)) { toast('Invalid amount', true); return; }
+  try {
+    const r = await api('/api/accounts/' + id + '/balance', { method: 'POST', body: JSON.stringify({ action, amount: n }) });
+    const a = r.account;
+    const el = document.getElementById('bal_' + id);
+    if (el) el.textContent = a.balance;
+    toast('✅ Balance updated to ' + a.balance);
+  } catch (e) { toast((e.data && e.data.error) || 'Error', true); }
+}
+async function ptsAction(id, action, label, sign) {
+  const acc = (allAccounts || []).find(a => String(a.id) === String(id));
+  if (!acc) return;
+  const v = prompt(label + ' for ' + acc.name + ' (current ' + acc.points + '):', '');
+  if (v == null) return;
+  const n = Math.round(parseFloat(v)) * (sign || 1);
+  if (isNaN(n)) { toast('Invalid points', true); return; }
+  try {
+    const r = await api('/api/accounts/' + id + '/points', { method: 'POST', body: JSON.stringify({ action, amount: n }) });
+    const a = r.account;
+    const el = document.getElementById('pts_' + id);
+    if (el) el.textContent = a.points;
+    toast('✅ Points updated to ' + a.points);
+  } catch (e) { toast((e.data && e.data.error) || 'Error', true); }
+}
+function addBalance(id) { balAction(id, 'add', 'Amount to ADD to balance'); }
+function subBalance(id) { balAction(id, 'add', 'Amount to deduct from balance', -1); }
+function setBalance(id) { balAction(id, 'set', 'Set new balance to'); }
+function addPoints(id) { ptsAction(id, 'add', 'Points to ADD'); }
+function setPoints(id) { ptsAction(id, 'set', 'Set new points to'); }
+function subPoints(id) { ptsAction(id, 'add', 'Points to REMOVE', -1); }
+function deleteAccountFun(id) {
+  if (!confirm('Delete this account forever?')) return;
+  api('/api/accounts/' + id, { method: 'DELETE' }).catch(() => toast('Error deleting account', true));
+}
+
+const MODAL_STATUS = { 1: '🟢 Available', 2: '🟡 Upcoming booking', 3: '🔴 Currently busy', 4: '🔴 Manual busy' };
+async function viewAccount(id) {
+  let a = null;
+  let tx = [];
+  try { const r = await api('/api/accounts/' + id); a = r.account; tx = r.transactions || []; }
+  catch { a = (allAccounts || []).find(x => String(x.id) === String(id)); }
+  if (!a) { toast('Account not found', true); return; }
+  document.getElementById('modalAvatar').src = a.avatar || '';
+  document.getElementById('modalName').textContent = a.name || '—';
+  document.getElementById('modalPhone').textContent = a.phone || '';
+  document.getElementById('modalUsername').textContent = (a.username ? '@' + a.username : '') + '  |  ' + (a.online ? '● online now' : '○ offline');
+  document.getElementById('modalBalance').textContent = a.balance;
+  document.getElementById('modalPoints').textContent = a.points;
+  document.getElementById('modalFavGame').textContent = a.favorite_game || '—';
+  document.getElementById('modalLastLogin').textContent = a.last_login ? String(a.last_login).slice(0, 16).replace('T', ' ') : '—';
+  const approved = (allMemberships || []).filter(m => m.account_id === a.id && m.status === 'approved').sort((x, y) => new Date(y.created_at) - new Date(x.created_at));
+  const tier = approved[0];
+  const tierEl = document.getElementById('modalTier');
+  tierEl.innerHTML = tier ? `<span class="modal-tier" style="background:${TIER_COLORS[tier.tier]}22;border:1px solid ${TIER_COLORS[tier.tier]};color:${TIER_COLORS[tier.tier]};">${tier.tier}</span>` : '';
+  const bookings = (allBookings || []).filter(b => String(b.account_id || '') === String(a.id) || (b.account_id === null && b.phone === a.phone && b.name === a.name));
+  const LABEL = { pending: '⏳', active: '🔴', completed: '✓', cancelled: '❌' };
+  document.getElementById('modalBookings').innerHTML = bookings.length === 0
+    ? '<span style="color:#888;">No bookings</span>'
+    : bookings.map(b => `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">${LABEL[b.status] || '·'} ${esc(pcsParse(b.pcs).join(', '))} — ${esc(b.date)} ${esc(b.time)} (${b.duration || 'Open'} min)${b.price ? ' · ' + Number(b.price) + ' EGP' : ''}</div>`).join('');
+  const txTYPES = { booking_payment: '💳 Pay', points_earned: '⭐ Points', points_converted: '🔁 Convert', admin_balance: '🛠 Balance', admin_points: '🛠 Points', membership_credit: '💎 Credit', booking_refund: '↩️ Refund' };
+  document.getElementById('modalTransactions').innerHTML = tx.length === 0
+    ? '<span style="color:#888;">No transactions</span>'
+    : tx.map(t => `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">${txTYPES[t.type] || '·'} <span style="color:${t.amount > 0 ? '#4ade80' : t.amount < 0 ? '#ff5f7a' : '#bbb'};">${t.amount == null || t.amount === 0 && !t.points ? '' : (t.amount > 0 ? '+' : '') + Number(t.amount)}</span>${t.points ? ' ⭐' + t.points : ''} <span style="color:#777;font-size:11px;">${esc(String(t.created_at || '').slice(0, 16).replace('T', ' '))}${t.reason ? ' · ' + esc(t.reason) : ''}</span></div>`).join('');
+  document.getElementById('accountModal').classList.add('show');
+}
+function closeAccountModal() { document.getElementById('accountModal').classList.remove('show'); }
+
+// ===== MEMBERSHIPS =====
+function renderMemberships() {
+  const tbody = document.getElementById('membershipsBody');
+  const empty = document.getElementById('membershipsEmpty');
+  const list = (allMemberships || []).filter(m => currentMemFilter === 'all' || m.status === currentMemFilter);
+  const LABEL = { pending: '⏳ Pending', approved: '✅ Approved', rejected: '✕ Rejected' };
+  if (list.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = list.map(m => {
+    const acc = (allAccounts || []).find(a => a.id === m.account_id);
+    let actions = '';
+    if (m.status === 'pending') {
+      actions = `<button class="btn-free btn-small" onclick="approveMembership('${esc(m.id)}')">✓ Approve</button>
+                 <button class="btn-delete btn-small" onclick="rejectMembership('${esc(m.id)}')">✕ Reject</button>`;
+    }
+    return `<tr>
+      <td>${esc(acc ? acc.name : (m.account_id || '—'))}</td>
+      <td style="color:${TIER_COLORS[m.tier] || '#fff'};">${esc(m.tier)}</td>
+      <td>${m.amount}</td>
+      <td>${LABEL[m.status] || esc(m.status)}</td>
+      <td style="white-space:nowrap;">${actions}</td>
+    </tr>`;
+  }).join('');
+}
+async function approveMembership(id) {
+  try { await api('/api/memberships/' + id, { method: 'PATCH', body: JSON.stringify({ status: 'approved' }) }); }
+  catch { toast('Error approving', true); }
+}
+async function rejectMembership(id) {
+  try { await api('/api/memberships/' + id, { method: 'PATCH', body: JSON.stringify({ status: 'rejected' }) }); }
+  catch { toast('Error rejecting', true); }
+}
+
+// ===== LIGHTBOX =====
+function openLightbox(src) {
+  if (!src) return;
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox() { document.getElementById('lightbox').classList.remove('show'); }
+
+// ============================================================
+// ===== WEBSITE CONTENT EDITOR (schema-driven, PART 2) =====
+// ============================================================
+const SECTION_IDS = ['features', 'booking', 'prices', 'offers', 'games', 'contact'];
+const DEVICE_TYPES = ['standard', 'vip'];
+const TIER_OPTS = ['bronze', 'silver', 'gold', 'diamond'];
+const PRICE_VARIANTS = ['standard', 'vip', 'addons'];
+const MAX_IMAGE = 2500000; // data-URL characters (~2MB binary)
+
+let contentStore = {};       // fetched content key -> value
+let edState = {};            // "games" | "prices" | "offers" | active site key -> dirty {value, savedJson}
+let activeSiteKey = 'site';
+
+const SCHEMAS = {
+  site: [
+    { key: 'title', label: 'Browser Title', type: 'text' },
+    { key: 'navBrand', label: 'Navbar Short Name', type: 'text' },
+    { key: 'icon', label: 'Logo Icon (emoji)', type: 'text' },
+    { key: 'name', label: 'Big Logo Name', type: 'text' },
+    { key: 'sub', label: 'Logo Subtitle', type: 'text' },
+    { key: 'footerName', label: 'Footer Site Name', type: 'text' },
+    { key: 'logoImage', label: 'Logo Image (replaces icon)', type: 'image' },
+  ],
+  hero: [
+    { key: 'tagline', label: 'Tagline', type: 'text' },
+    { key: 'bgImage', label: 'Background Image', type: 'image' },
+    { key: 'btnBook', label: 'Book Button', type: 'group', fields: [
+      { key: 'label', label: 'Button Text', type: 'text' },
+      { key: 'href', label: 'Button Destination', type: 'text' },
+      { key: 'visible', label: 'Show Button', type: 'bool' },
+    ]},
+    { key: 'btnLogin', label: 'Login Button', type: 'group', fields: [
+      { key: 'label', label: 'Button Text', type: 'text' },
+      { key: 'visible', label: 'Show Button', type: 'bool' },
+    ]},
+    { key: 'stats', label: 'Hero Stats', type: 'repeat', max: 6, fields: [
+      { key: 'num', label: 'Number', type: 'text' },
+      { key: 'label', label: 'Label', type: 'text' },
+    ]},
+  ],
+  features: [
+    { key: 'label', label: 'Small Label', type: 'text' },
+    { key: 'titleBefore', label: 'Title (before glow)', type: 'text' },
+    { key: 'titleGlow', label: 'Title (glow word)', type: 'text' },
+    { key: 'cards', label: 'Feature Cards', type: 'repeat', max: 12, fields: [
+      { key: 'icon', label: 'Icon (emoji)', type: 'text' },
+      { key: 'title', label: 'Title', type: 'text' },
+      { key: 'desc', label: 'Description', type: 'textarea' },
+    ]},
+  ],
+  booking: [
+    { key: 'label', label: 'Small Label', type: 'text' },
+    { key: 'titleBefore', label: 'Title (before glow)', type: 'text' },
+    { key: 'titleGlow', label: 'Title (glow word)', type: 'text' },
+    { key: 'depositTitle', label: 'Deposit Title', type: 'text' },
+    { key: 'depositText', label: 'Deposit Text ({deposit} = amount)', type: 'text' },
+    { key: 'submit', label: 'Confirm Button Text', type: 'text' },
+  ],
+  prices: [
+    { key: 'label', label: 'Small Label', type: 'text' },
+    { key: 'titleBefore', label: 'Title (before glow)', type: 'text' },
+    { key: 'titleGlow', label: 'Title (glow word)', type: 'text' },
+    { key: 'cards', label: 'Price Cards', type: 'repeat', max: 12, fields: [
+      { key: 'variant', label: 'Variant', type: 'select', opts: PRICE_VARIANTS },
+      { key: 'crown', label: 'VIP Crown (emoji, optional)', type: 'text' },
+      { key: 'icon', label: 'Icon', type: 'text' },
+      { key: 'title', label: 'Card Title', type: 'text' },
+      { key: 'rows', label: 'Price Rows', type: 'repeat', max: 12, fields: [
+        { key: 'label', label: 'Label', type: 'text' },
+        { key: 'prefix', label: 'Prefix (e.g +)', type: 'text' },
+        { key: 'price', label: 'Price (number)', type: 'number' },
+        { key: 'suffix', label: 'Suffix (e.g EGP)', type: 'text' },
+        { key: 'featured', label: 'Featured row', type: 'bool' },
+      ]},
+    ]},
+  ],
+  offers: [
+    { key: 'label', label: 'Small Label', type: 'text' },
+    { key: 'titleBefore', label: 'Title (before glow)', type: 'text' },
+    { key: 'titleGlow', label: 'Title (glow word)', type: 'text' },
+    { key: 'cards', label: 'Offer Cards', type: 'repeat', max: 12, fields: [
+      { key: 'badge', label: 'Badge (e.g BRONZE)', type: 'text' },
+      { key: 'tier', label: 'Tier', type: 'select', opts: TIER_OPTS },
+      { key: 'amount', label: 'Amount (number)', type: 'text' },
+      { key: 'amountSuffix', label: 'Amount Suffix (EGP)', type: 'text' },
+      { key: 'desc', label: 'Description', type: 'text' },
+      { key: 'bonusLabel', label: 'Bonus Label', type: 'text' },
+      { key: 'bonus', label: 'Bonus Value', type: 'text' },
+      { key: 'total', label: 'Total Value', type: 'text' },
+      { key: 'btn', label: 'Button Text', type: 'text' },
+      { key: 'amountData', label: 'Membership Amount (number)', type: 'number' },
+    ]},
+  ],
+  games: [
+    { key: 'label', label: 'Small Label', type: 'text' },
+    { key: 'titleBefore', label: 'Title (before glow)', type: 'text' },
+    { key: 'titleGlow', label: 'Title (glow word)', type: 'text' },
+    { key: 'tabs', label: 'Game Tabs', type: 'repeat', max: 12, fields: [
+      { key: 'id', label: 'Tab ID (online/offline/lan/sim)', type: 'text' },
+      { key: 'label', label: 'Tab Label', type: 'text' },
+      { key: 'icon', label: 'Tab Icon', type: 'text' },
+      { key: 'games', label: 'Games List', type: 'repeat', max: 100, fields: [
+        { key: 'name', label: 'Game Name', type: 'text' },
+        { key: 'icon', label: 'Icon (emoji)', type: 'text' },
+        { key: 'image', label: 'Cover Image', type: 'image' },
+      ]},
+    ]},
+  ],
+  contact: [
+    { key: 'label', label: 'Small Label', type: 'text' },
+    { key: 'titleBefore', label: 'Title (before glow)', type: 'text' },
+    { key: 'titleGlow', label: 'Title (glow word)', type: 'text' },
+    { key: 'items', label: 'Contact Items', type: 'repeat', max: 12, fields: [
+      { key: 'icon', label: 'Icon', type: 'text' },
+      { key: 'title', label: 'Title', type: 'text' },
+      { key: 'value', label: 'Value', type: 'text' },
+      { key: 'type', label: 'Type', type: 'select', opts: ['text', 'link'] },
+      { key: 'href', label: 'Href (for links)', type: 'text' },
+    ]},
+    { key: 'map', label: 'Map', type: 'group', fields: [
+      { key: 'url', label: 'Map URL', type: 'text' },
+      { key: 'image', label: 'Map Image', type: 'image' },
+    ]},
+  ],
+  footer: [
+    { key: 'text', label: 'Footer Tagline', type: 'text' },
+    { key: 'copy', label: 'Copyright Line', type: 'text' },
+    { key: 'links', label: 'Footer Links', type: 'repeat', max: 20, fields: [
+      { key: 'label', label: 'Link Text', type: 'text' },
+      { key: 'href', label: 'URL', type: 'text' },
+    ]},
+  ],
+  sections: [
+    { key: 'hidden', label: 'Sections', type: 'sectoggles', ids: SECTION_IDS },
+    { key: 'order', label: 'Section Order', type: 'reorder', ids: SECTION_IDS },
+  ],
+  new_features: [
+    { key: 'items', label: 'Features', type: 'features_toggle' },
+  ],
+};
+
+// ---------- state helpers ----------
+async function ensureContent() {
+  try {
+    const r = await api('/api/content');
+    contentStore = r.content || {};
+  } catch { contentStore = {}; }
+}
+function stVal(key) {
+  const s = edState[activeSiteKey];
+  if (!s) return undefined;
+  return s.value[key];
+}
+function setSt(rootVal) {
+  edState[activeSiteKey] = edState[activeSiteKey] || { savedJson: '' };
+  edState[activeSiteKey].value = rootVal;
+}
+function isDirty(key) {
+  const s = edState[key];
+  if (!s) return false;
+  return JSON.stringify(s.value) !== s.savedJson;
+}
+
+// ---------- image file handling ----------
+function readImageFile(input, cb) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  const fr = new FileReader();
+  fr.onload = e => {
+    const url = e.target.result;
+    if (url.length > MAX_IMAGE) { toast('Image too large (max ~2MB). Please compress it.', true); cb(null); return; }
+    cb(url);
+  };
+  fr.readAsDataURL(f);
+}
+
+// ---------- simple field render ----------
+function renderSimpleField(f, key, val, path) {
+  const id = idFor(path);
+  if (f.type === 'image') {
+    return `<div class="field">
+      <label>${esc(f.label)}</label>
+      <div class="img-field">
+        ${val ? `<img class="img-preview" src="${esc(val)}"/>` : '<div class="img-empty">no image</div>'}
+        <div>
+          <input type="file" accept="image/*" onchange="onImagePick(this, '${key}')" style="font-size:11px;"/>
+          ${val ? `<button type="button" class="btn-ghost btn-small" onclick="clearImage('${key}')">🗑 Remove</button>` : ''}
+        </div>
+      </div>
+      <div class="img-hint">PNG/JPG up to ~2MB</div>
+    </div>`;
+  }
+  if (f.type === 'bool') {
+    return `<div class="check-row" style="margin-top:4px;"><input type="checkbox" id="${id}" ${val ? 'checked' : ''} onchange="onSimpleInput('${key}','bool',this.checked)"/><span>${esc(f.label)}</span></div>`;
+  }
+  if (f.type === 'select') {
+    return `<div class="field"><label>${esc(f.label)}</label><select id="${id}" onchange="onSimpleInput('${key}','select',this.value)">${f.opts.map(o => `<option value="${esc(o)}" ${String(val) === String(o) ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></div>`;
+  }
+  return `<div class="field"><label>${esc(f.label)}</label><input type="${f.type === 'number' ? 'number' : 'text'}" id="${id}" value="${esc(val == null ? '' : val)}" oninput="onSimpleInput('${key}','input',this.value)"/></div>`;
+}
+
+// ---------- repeat editor ----------
+function renderRepeat(f, key, rootVal, path) {
+  const arr = Array.isArray(rootVal) ? rootVal : (f.fields.every(x => x.type === 'repeat') ? [] : []);
+  const repId = 'rep_' + key;
+  return `<div class="field">
+    <label>${esc(f.label)} <span class="hint">(${arr.length}${f.max ? ' / ' + f.max : ''})</span></label>
+    <div class="rep-actions">
+      <button type="button" class="btn-ghost btn-small" onclick="addRep('${key}')">＋ Add</button>
+      <button type="button" class="btn-ghost btn-small" onclick="repMove('${key}', 0, -1)">▲</button>
+      <button type="button" class="btn-ghost btn-small" onclick="repMove('${key}', ${Math.max(0, arr.length - 1)}, 1)">▼</button>
+    </div>
+    <div class="rep-list" id="${repId}">
+      ${arr.map((item, i) => renderRepItem(f, key, item, i, path)).join('')}
+    </div>
+  </div>`;
+}
+function renderRepItem(f, key, item, i, path) {
+  const sub = f.fields.map(subf => {
+    const p = path.concat([key, i, subf.key]);
+    if (subf.type === 'repeat') {
+      return renderRepeat(subf, p.join('_'), item ? item[subf.key] : undefined, p);
+    }
+    if (subf.type === 'group') {
+      return `<div class="field-row">${subf.fields.map(g => {
+        const gp = p.concat([subf.key, g.key]);
+        return renderSimpleField(g, gp.join('_'), item && item[subf.key] ? item[subf.key][g.key] : undefined, gp);
+      }).join('')}</div>`;
+    }
+    return renderSimpleField(subf, p.join('_'), item ? item[subf.key] : undefined, p);
+  }).join('');
+  return `<div class="rep-item">
+    <div class="rep-head">
+      <span class="idx">#${i + 1}</span>
+      <span class="btns" style="display:flex;gap:8px;">
+        <button type="button" class="btn-ghost btn-small" onclick="repMove('${key}', ${i}, -1)">▲</button>
+        <button type="button" class="btn-ghost btn-small" onclick="repMove('${key}', ${i}, 1)">▼</button>
+        <button type="button" class="btn-delete btn-small" onclick="delRep('${key}', ${i})">🗑</button>
+      </span>
+    </div>
+    ${sub}
+  </div>`;
+}
+function vGet(path) {
+  let cur = edState[activeSiteKey].value;
+  for (const k of path) {
+    if (cur == null) return undefined;
+    cur = cur[k];
+  }
+  return cur;
+}
+function vSet(path, val) {
+  let cur = edState[activeSiteKey].value;
+  for (let i = 0; i < path.length - 1; i++) {
+    const k = path[i];
+    if (cur[k] == null) cur[k] = {};
+    cur = cur[k];
+  }
+  cur[path[path.length - 1]] = val;
+  refreshEditor();
+}
+function onSimpleInput(key, kind, val, pathOverride) {
+  const path = (pathOverride || key.split('_')).map(x => /^\d+$/.test(x) ? +x : x);
+  vSet(path, val);
+  refreshEditor();
+}
+function addRep(itemKey) {
+  const path = itemKey.split('_');
+  const cur = vGet(path);
+  const f = fieldByPath(path.concat([0]));
+  const arr = cur || [];
+  const newItem = {};
+  if (f && f.fields) {
+    for (const sf of f.fields) newItem[sf.key] = sf.type === 'bool' ? false : (sf.type === 'repeat' ? [] : '');
+  }
+  arr.push(newItem);
+  vSet(path, arr);
+  refreshEditor();
+}
+function delRep(itemKey, idx) {
+  const path = itemKey.split('_');
+  const cur = vGet(path) || [];
+  cur.splice(idx, 1);
+  vSet(path, cur);
+  refreshEditor();
+}
+function repMove(itemKey, idx, d) {
+  const path = itemKey.split('_');
+  const cur = vGet(path) || [];
+  const j = idx + d;
+  if (j < 0 || j >= cur.length) return;
+  const t = cur[idx];
+  cur[idx] = cur[j];
+  cur[j] = t;
+  vSet(path, cur);
+  refreshEditor();
+}
+function fieldByPath(arrPath) {
+  let f = null;
+  let schema = SCHEMAS[activeSiteKey];
+  const path = arrPath.map(x => /^\d+$/.test(x) ? +x : x);
+  // find field walking schema
+  let curSchema = schema;
+  let i = 0;
+  while (i < path.length) {
+    const key = path[i];
+    const sf = curSchema.find(x => x.key === key);
+    if (!sf) { f = null; break; }
+    if (sf.type === 'repeat') { f = sf; i += 2; } // skip repeat index
+    else if (sf.type === 'group') { f = null; curSchema = sf.fields; i++; }
+    else { f = sf; i++; }
+  }
+  return f;
+}
+function onImagePick(input, key) {
+  readImageFile(input, url => {
+    if (url) vSet(key.split('_'), url);
+  });
+}
+function clearImage(key) {
+  vSet(key.split('_'), '');
+}
+function onSectoggle(key, id, checked) {
+  const cur = vGet(key.split('_')) || [];
+  const idx = cur.indexOf(id);
+  if (checked && idx === -1) cur.push(id);
+  if (!checked && idx > -1) cur.splice(idx, 1);
+  vSet(key.split('_'), cur);
+}
+
+// ---------- sections / new-features special editors ----------
+function renderSectionsSpecial(v) {
+  const hidden = Array.isArray(v.hidden) ? v.hidden : [];
+  const order = (Array.isArray(v.order) && v.order.length ? v.order : SECTION_IDS.slice());
+  const toggles = SECTION_IDS.map(id => `<div class="check-row"><input type="checkbox" id="sec_${id}" ${hidden.includes(id) ? '' : 'checked'} onchange="onSectoggle('hidden', '${id}', this.checked)"/><span>Show section "#${id}"</span></div>`).join('');
+  const orderList = order.map((id, i) => `<div class="manual-pc-item" style="cursor:default;display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;max-width:380px;background:rgba(106,0,255,0.06);border:1px solid rgba(106,0,255,0.3);">
+    <span>${i + 1}. ${esc(id)}</span>
+    <span style="display:flex;gap:6px;">
+      <button class="btn-ghost btn-small" onclick="moveOrder('${id}', -1)">▲</button>
+      <button class="btn-ghost btn-small" onclick="moveOrder('${id}', 1)">▼</button>
+    </span>
+  </div>`).join('');
+  return `<div class="card">
+    <div class="card-title">🧩 SECTION VISIBILITY</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;">${toggles}</div>
+  </div>
+  <div class="card">
+    <div class="card-title">📐 SECTION ORDER <span class="hint">— top to bottom on the website</span></div>
+    <div style="display:flex;flex-direction:column;gap:6px;max-width:420px;">${orderList || '<div class="muted">No order set</div>'}</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px;"><button class="btn-primary" id="sections_saveBtn" onclick="saveContent()">💾 SAVE CHANGES</button><span id="sections_msg" style="font-size:12px;color:#4ade80;"></span></div>`;
+}
+function moveOrder(id, d) {
+  const order = (edState[activeSiteKey].value.order || SECTION_IDS.slice()).slice();
+  const i = order.indexOf(id);
+  if (i < 0) return;
+  const j = i + d;
+  if (j < 0 || j >= order.length) return;
+  const t = order[i]; order[i] = order[j]; order[j] = t;
+  edState[activeSiteKey].value.order = order;
+  refreshEditor();
+}
+
+// ---------- editor build ----------
+function refreshEditor() {
+  const key = activeSiteKey;
+  const v = edState[key] && edState[key].value;
+  const root = document.getElementById(key + 'Editor');
+  if (!root) return;
+  root.innerHTML = buildEditorBody(key, v);
+  const sv = document.getElementById(key + '_saveBtn');
+  if (sv) {
+    const dirty = isDirty(key);
+    sv.style.opacity = dirty ? '1' : '0.45';
+    sv.textContent = dirty ? '💾 SAVE CHANGES' : '✓ SAVED — NO CHANGES';
+  }
+}
+function buildEditorBody(key, v) {
+  if (key === 'sections') return renderSectionsSpecial(v);
+  if (key === 'new_features') return renderNewFeaturesBody(v);
+  const schema = SCHEMAS[key];
+  const body = schema.map(f => {
+    const val = v ? v[f.key] : undefined;
+    if (f.type === 'group') {
+      return `<div class="card"><div class="card-title">${esc(f.label)}</div><div class="field-row">${f.fields.map(g => renderSimpleField(g, f.key + '_' + g.key, val && val[g.key], [f.key, g.key])).join('')}</div></div>`;
+    }
+    if (f.type === 'repeat') return renderRepeat(f, f.key, val, [f.key]);
+    if (f.type === 'select' || f.type === 'image' || f.type === 'bool') return renderSimpleField(f, f.key, val, [f.key]);
+    return renderSimpleField(f, f.key, val, [f.key]);
+  }).join('');
+  return `<div class="card"><div class="card-title">${esc(key.toUpperCase() + ' — WEBSITE CONTENT')}</div>${body}<div style="display:flex;align-items:center;gap:14px;margin-top:8px;"><button class="btn-primary" id="${key}_saveBtn" onclick="saveContent()">💾 SAVE CHANGES</button><span id="${key}_msg" style="font-size:12px;color:#4ade80;"></span></div></div>`;
+}
+async function showContentEditor(key) {
+  activeSiteKey = key;
+  document.querySelectorAll('#siteNav .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.site === key));
+  const editorHost = document.getElementById(key + 'Editor');
+  // ensure host exists; create panels under website body for site sections, or standalone for games/prices/offers
+  let host = editorHost;
+  if (!host) {
+    // standalone editors render into their panel
+    host = document.getElementById(key + 'Editor') || (() => { const d = document.createElement('div'); d.id = key + 'Editor'; document.getElementById('panel-' + (key === 'games' ? 'games' : key === 'prices' || key === 'offers' ? key : 'website')).appendChild(d); return d; })();
+  }
+  await ensureContent();
+  if (activeSiteKey !== key) return;
+  edState[key] = edState[key] || { value: contentStore[key] || defaultsFor(key), savedJson: JSON.stringify(contentStore[key] || defaultsFor(key)) };
+  host.innerHTML = '<div style="opacity:0.5;padding:20px;">Loading…</div>';
+  setTimeout(() => { host.innerHTML = buildEditorBody(key, edState[key].value); refreshEditor(); }, 0);
+}
+function defaultsFor(key) {
+  return {};
+}
+async function saveContent() {
+  const key = activeSiteKey;
+  const s = edState[key];
+  if (!s) return;
+  const msg = document.getElementById(key + '_msg');
+  try {
+    const r = await api('/api/content/' + key, { method: 'PUT', body: JSON.stringify(s.value) });
+    msg.textContent = '✅ Saved to database — live website updated';
+    msg.style.color = '#4ade80';
+    edState[key].savedJson = JSON.stringify(r.value);
+    refreshEditor();
+    setTimeout(() => msg.textContent = '', 4000);
+    toast('✅ ' + key + ' saved — live site updated');
+  } catch (e) {
+    const detail = e.data && e.data.details && e.data.details.length ? (e.data.details[0] && (e.data.details[0].message || e.data.details[0])) : null;
+    msg.textContent = '❌ ' + ((e.data && e.data.error) || 'Error') + (detail ? ' — ' + detail : '');
+    msg.style.color = '#ff003c';
+    toast('❌ Validation failed: ' + ((e.data && e.data.error) || 'Error'), true);
+    setTimeout(() => msg.textContent = '', 6000);
+  }
+}
+
+// ===== NEW FEATURES =====
+const NEW_FEATURES_REGISTRY = [
+  { id: 'loyalty', label: '🎟️ Loyalty Program', desc: 'Give customers free hours when they reach a points threshold. (Requires points) — currently a placeholder manager.' },
+  { id: 'events', label: '🏆 Gaming Events & Tournaments', desc: 'Create events, let customers join, track winners. Placeholder manager.' },
+  { id: 'notices', label: '📢 Announcements & Notices', desc: 'Show a banner on the website with cafe news. Placeholder manager.' },
+];
+function renderNewFeatures() {
+  const list = document.getElementById('newFeaturesList');
+  const v = contentStore.new_features || { items: NEW_FEATURES_REGISTRY.map(ft => { const en = (contentStore.new_features && contentStore.new_features.items || []).find(x => x.id === ft.id); return { id: ft.id, label: ft.label, enabled: en ? en.enabled : false }; }) };
+  const vi = (v.items || []).find(x => x.id === 'loyalty') || {};
+  if (!list) return;
+  list.innerHTML = v.items.map(ft => {
+    const f = NEW_FEATURES_REGISTRY.find(x => x.id === ft.id);
+    return `<div class="rep-item" style="margin-bottom:10px;">
+      <div class="check-row" style="justify-content:space-between;">
+        <div><strong>${esc(f ? f.label : ft.label)}</strong><div style="font-weight:400;color:rgba(255,255,255,0.5);font-size:12px;">${f ? esc(f.desc) : ''}</div></div>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'Orbitron',monospace;font-size:11px;color:rgba(255,255,255,0.6);">
+          <span>${ft.enabled ? 'ON' : 'OFF'}</span>
+          <input type="checkbox" ${ft.enabled ? 'checked' : ''} onchange="toggleFeature('${ft.id}', this.checked)" style="accent-color:#6a00ff;width:18px;height:18px;"/>
+        </label>
+      </div>
+      ${ft.enabled ? `<div style="margin-top:10px;padding:12px;background:rgba(106,0,255,0.06);border:1px dashed rgba(106,0,255,0.4);border-radius:8px;font-size:13px;color:rgba(255,255,255,0.7);">🧪 <strong>Manager placeholder</strong> — this feature is switched on and its dedicated management interface will appear here. It ships as an extensible scaffold and is intentionally not wired to live site behaviour yet.</div>` : ''}
+    </div>`;
+  }).join('');
+}
+async function toggleFeature(id, enabled) {
+  await ensureContent();
+  let items = (contentStore.new_features && contentStore.new_features.items) || [];
+  let found = items.find(x => x.id === id);
+  if (found) found.enabled = enabled;
+  else items.push({ id, label: (NEW_FEATURES_REGISTRY.find(f => f.id === id) || {}).label || id, enabled });
+  try {
+    await api('/api/content/new_features', { method: 'PUT', body: JSON.stringify({ items }) });
+    await ensureContent();
+    toast(enabled ? '✅ Feature "' + id + '" enabled' : 'Feature "' + id + '" disabled');
+    renderNewFeatures();
+  } catch (e) { toast((e.data && e.data.error) || 'Error saving feature', true); renderNewFeatures(); }
+}
+
+// ===== AUTO LOGIN =====
+(async function autoLoad() {
+  const t = localStorage.getItem(ADMIN_TOKEN_KEY);
+  if (t) {
+    try {
+      await api('/api/settings');
+      enterPanel();
+      return;
+    } catch {}
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+  }
+})();
+
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('copy', e => e.preventDefault());
 document.addEventListener('dragstart', e => e.preventDefault());
@@ -1398,13 +2251,13 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && ['c','C','x','X','u','U','s','S','p','P'].includes(e.key)) e.preventDefault();
   if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','i','J','j','C','c'].includes(e.key))) e.preventDefault();
 });
-// anti-devtools
+document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('username').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
 setInterval(() => {
   const d = document.createElement('div');
   Object.defineProperty(d, 'id', { get: () => { location.reload(); } });
   console.log('%c', d);
 }, 1000);
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 </script>
 </body>
 </html>

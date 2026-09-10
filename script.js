@@ -1,178 +1,120 @@
 /* ===========================
    GAME ZONE GAMING – script.js
-=========================== */
+   Real-time client (REST + WebSocket + SQLite backend)
+   =========================== */
 
-// ===== SHARED CLOUD STORAGE (JSONBlob, one blob per collection) with localStorage cache =====
-const CLOUD_URLS = {
-  bookings: 'https://jsonblob.com/api/jsonBlob/019fdd52-a5bd-788d-b159-260684da9139',
-  accounts: 'https://jsonblob.com/api/jsonBlob/019fdd52-a432-7877-8214-8a6611e9300e',
-  memberships: 'https://jsonblob.com/api/jsonBlob/019fdd52-a72b-7522-b8a8-3a6461ec70a3',
-};
-const STORE_KEYS = ['bookings', 'accounts', 'memberships'];
+// ===== API + REAL-TIME CONNECTION =====
+const API_BASE = (() => {
+  if (typeof location !== 'undefined' && location.host) return location.origin;
+  return 'http://localhost:3000';
+})();
+const WS_URL = API_BASE.replace(/^http/, 'ws') + '/ws';
+const TOKEN_KEY = 'gzg_token';
+const USER_KEY = 'gzg_user';
 
-function _lsGet(key) {
-  try { return JSON.parse(localStorage.getItem('gzg_' + key)) || []; } catch { return []; }
-}
-function _lsSet(key, data) {
-  localStorage.setItem('gzg_' + key, JSON.stringify(data));
-}
-
-let _store = null;
-let _deleted = {};
-let _dirty = {};
-let _saveChain = Promise.resolve();
-let _refreshPromise = null;
-let _lastRefreshTime = 0;
-
-async function _loadStore() {
-  if (_store) return _store;
-  _store = {
-    bookings: _lsGet('bookings'),
-    accounts: _lsGet('accounts'),
-    memberships: _lsGet('memberships'),
-  };
-  _deleted = { bookings: [], accounts: [], memberships: [] };
-  _dirty = { bookings: false, accounts: false, memberships: false };
-  _refreshStore();
-  return _store;
+async function api(path, opts) {
+  opts = opts || {};
+  const headers = opts.headers || {};
+  if (opts.method && opts.method !== 'GET') headers['Content-Type'] = 'application/json';
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(API_BASE + path, { ...opts, headers });
+  let data = null;
+  try { data = await res.json(); } catch {}
+  if (!res.ok) {
+    const err = new Error((data && data.error) || ('HTTP ' + res.status));
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
 }
 
-function _mergeById(localArr, serverArr) {
-  const map = new Map();
-  for (const it of (serverArr || [])) map.set(it.id, it);
-  for (const it of (localArr || [])) map.set(it.id, it);
-  return Array.from(map.values());
+// cached data shared by UI
+let _bookingsCache = [];
+let _deviceCache = [];
+let _membershipsCache = [];
+let _lastPcHash = '';
+let _availabilityTimer = null;
+let _ws = null;
+let _wsReconnectDelay = 2000;
+
+function getCurrentUser() {
+  try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch { return null; }
+}
+function saveUser(u) {
+  const clean = { id: u.id, name: u.name, username: u.username || '', phone: u.phone, avatar: u.avatar || '', favorite_game: u.favorite_game || '', balance: u.balance || 0, points: u.points || 0, online: !!u.online, last_login: u.last_login || '' };
+  localStorage.setItem(USER_KEY, JSON.stringify(clean));
+}
+function clearSession() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
 }
 
-function _refreshStore() {
-  if (!_store) return Promise.resolve();
-  if (_refreshPromise) return _refreshPromise;
-  const now = Date.now();
-  if (now - _lastRefreshTime < 2000) return Promise.resolve();
-  _lastRefreshTime = now;
-  _refreshPromise = (async () => {
-    const results = await Promise.all(STORE_KEYS.map(async (key) => {
-      try {
-        const ctl = new AbortController();
-        const timer = setTimeout(() => ctl.abort(), 4000);
-        const res = await fetch(CLOUD_URLS[key], { signal: ctl.signal, headers: { 'Accept': 'application/json' } });
-        clearTimeout(timer);
-        const data = await res.json();
-        return [key, Array.isArray(data) ? data : null];
-      } catch { return [key, null]; }
-    }));
-    for (const [key, data] of results) {
-      if (!_dirty[key] && data) {
-        _store[key] = data;
-        _lsSet(key, data);
-      }
-    }
-  })();
-  _refreshPromise.finally(() => { _refreshPromise = null; });
-  return _refreshPromise;
-}
-
-function _saveStore(key) {
-  if (!_store) return Promise.resolve();
-  _dirty[key] = true;
-  _lsSet(key, _store[key]);
-  _saveChain = _saveChain.then(async () => {
-    try {
-      for (let attempt = 0; attempt < 5; attempt++) {
-        let etag = null, serverArr = [], gotServer = false;
-        try {
-          const ctl = new AbortController();
-          const timer = setTimeout(() => ctl.abort(), 4000);
-          const res = await fetch(CLOUD_URLS[key], { signal: ctl.signal, headers: { 'Accept': 'application/json' } });
-          clearTimeout(timer);
-          etag = res.headers.get('ETag');
-          const data = await res.json();
-          if (Array.isArray(data)) { serverArr = data; gotServer = true; }
-        } catch {}
-        if (gotServer) {
-          serverArr = serverArr.filter(it => !(_deleted[key] || []).includes(it.id));
-          _store[key] = _mergeById(_store[key], serverArr);
-          _deleted[key] = (_deleted[key] || []).filter(id => !_store[key].some(it => it.id === id));
-        }
-        const ctl = new AbortController();
-        const timer = setTimeout(() => ctl.abort(), 4000);
-        const res = await fetch(CLOUD_URLS[key], { method: 'PUT', signal: ctl.signal, headers: { 'Content-Type': 'application/json', 'If-Match': gotServer ? etag : '' }, body: JSON.stringify(_store[key]) });
-        clearTimeout(timer);
-        if (res.status === 200) break;
-        if (gotServer && res.status === 412) continue;
-        break;
-      }
-    } catch {}
-    _lsSet(key, _store[key]);
-  });
-  _saveChain = _saveChain.finally(() => { _dirty[key] = false; });
-  return _saveChain;
-}
-
-let _lastBookings = [];
+// ===== DATA WRAPPERS =====
 async function getBookings() {
-  await _loadStore();
-  await _refreshStore();
-  _lastBookings = _store.bookings;
-  return _lastBookings;
+  try { const r = await api('/api/bookings'); _bookingsCache = r.bookings; } catch { _bookingsCache = []; }
+  return _bookingsCache;
 }
-let _lastAccounts = [];
 async function getAccounts() {
-  await _loadStore();
-  await _refreshStore();
-  _lastAccounts = _store.accounts;
-  return _lastAccounts;
-}
-async function getAccountByPhone(phone) {
-  await _loadStore();
-  await _refreshStore();
-  return _store.accounts.find(a => a.phone === phone) || null;
+  try { const r = await api('/api/accounts'); return r.accounts; } catch { return []; }
 }
 async function getMemberships() {
-  await _loadStore();
-  await _refreshStore();
-  return _store.memberships;
+  try { const r = await api('/api/memberships'); _membershipsCache = r.memberships; return _membershipsCache; } catch { return []; }
 }
-function jitter() { return Math.random() * 3000; }
+async function getDevices() {
+  try { const r = await api('/api/devices'); _deviceCache = r.devices; if (r.settings) _liveSettings = r.settings; return r.devices; } catch { return []; }
+}
+async function postBooking(d) { const r = await api('/api/bookings', { method: 'POST', body: JSON.stringify(d) }); return r.booking; }
+async function patchBooking(id, d) { const r = await api('/api/bookings/' + id, { method: 'PATCH', body: JSON.stringify(d) }); return r.booking; }
+async function deleteBookingSupabase(id) { await api('/api/bookings/' + id, { method: 'DELETE' }); }
+async function patchAccount(id, d) { const r = await api('/api/accounts/' + id, { method: 'PATCH', body: JSON.stringify(d) }); return r.account; }
+async function postMembership(d) { const r = await api('/api/memberships', { method: 'POST', body: JSON.stringify(d) }); return r.membership; }
 
-async function postBooking(d) {
-  await _loadStore();
-  _store.bookings.push(d);
-  await _saveStore('bookings');
-  return d;
+// ===== LIVE CONFLICT CHECK =====
+function timeToMin(t) {
+  if (!t) return 0;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + (m || 0);
 }
-async function patchBooking(id, d) {
-  await _loadStore();
-  const idx = _store.bookings.findIndex(x => x.id === id);
-  if (idx !== -1) { Object.assign(_store.bookings[idx], d); await _saveStore('bookings'); return _store.bookings[idx]; }
-  return null;
-}
-async function deleteBookingSupabase(id) {
-  await _loadStore();
-  _store.bookings = _store.bookings.filter(x => x.id !== id);
-  _deleted.bookings.push(id);
-  await _saveStore('bookings');
-}
-async function postAccount(d) {
-  await _loadStore();
-  _store.accounts.push(d);
-  await _saveStore('accounts');
-  return d;
-}
-async function patchAccount(id, d) {
-  await _loadStore();
-  const idx = _store.accounts.findIndex(x => x.id === id);
-  if (idx !== -1) { Object.assign(_store.accounts[idx], d); await _saveStore('accounts'); return _store.accounts[idx]; }
-  return null;
-}
-async function deleteAccountSupabase(id) {
-  await _loadStore();
-  _store.accounts = _store.accounts.filter(x => x.id !== id);
-  _deleted.accounts.push(id);
-  await _saveStore('accounts');
+function durMin(d) {
+  const n = parseInt(d, 10);
+  if (!isNaN(n) && n > 0) return n;
+  if (d === 'custom') return 0;
+  if (String(d).includes('1 Hour')) return 60;
+  if (String(d).includes('2')) return 120;
+  if (String(d).includes('3')) return 180;
+  if (String(d).includes('Unlimited')) return 1440;
+  return 60;
 }
 
-// ===== AUTH HELPERS =====
+async function updateConflictDisplay() {
+  const el = document.getElementById('conflictInfo');
+  if (!el) return;
+  const date = document.querySelector('[type="date"]')?.value;
+  const time = document.getElementById('bookingTime')?.value;
+  const sel = document.getElementById('durationSelect');
+  const cust = document.getElementById('durationCustom');
+  const duration = sel && sel.value === 'custom' ? cust?.value : sel?.value;
+  const selectedPCs = duration === 0 ? [] : [...document.querySelectorAll('#pcGrid input:checked')].map(c => c.value);
+  if (!date || !time || durMin(duration) <= 0 || selectedPCs.length === 0) { el.textContent = ''; el.className = 'conflict-info'; return; }
+  clearTimeout(_availabilityTimer);
+  _availabilityTimer = setTimeout(async () => {
+    try {
+      const r = await api('/api/availability', { method: 'POST', body: JSON.stringify({ date, time, duration: durMin(duration), pcs: selectedPCs }) });
+      const conflicts = r.conflicts || [];
+      if (conflicts.length === 0) {
+        const suffix = r.nextFree ? ' (متاح من ' + r.nextFree + ')' : '';
+        el.textContent = 'متاح ✅' + suffix;
+        el.className = 'conflict-info ok';
+        return;
+      }
+      const c = conflicts[0];
+      el.textContent = '⛔ ' + c.pc + ' محجوز من ' + c.name + ' (' + c.start + ' - ' + c.end + ')';
+      el.className = 'conflict-info error';
+    } catch { el.textContent = ''; el.className = 'conflict-info'; }
+  }, 250);
+}
 
 // ===== CURSOR =====
 const cursor = document.getElementById('cursor');
@@ -246,7 +188,6 @@ if (canvas && ctx) {
     particlesRAF = requestAnimationFrame(drawParticles);
   }
   drawParticles();
-  // pause particles when page hidden
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { cancelAnimationFrame(particlesRAF); }
     else { drawParticles(); }
@@ -260,9 +201,7 @@ window.addEventListener('scroll', () => {
   cancelAnimationFrame(scrollRAF);
   scrollRAF = requestAnimationFrame(() => {
     if (navbar) {
-      navbar.style.boxShadow = window.scrollY > 10
-        ? '0 4px 40px rgba(106,0,255,0.25)'
-        : '';
+      navbar.style.boxShadow = window.scrollY > 10 ? '0 4px 40px rgba(106,0,255,0.25)' : '';
     }
   });
 }, { passive: true });
@@ -299,8 +238,8 @@ const revealObserver = new IntersectionObserver(entries => {
 reveals.forEach(el => revealObserver.observe(el));
 
 // ===== GAME TABS =====
-const tabBtns    = document.querySelectorAll('.tab-btn');
-const tabPanels  = document.querySelectorAll('.tab-content');
+const tabBtns   = document.querySelectorAll('.tab-btn');
+const tabPanels = document.querySelectorAll('.tab-content');
 
 tabBtns.forEach(btn => {
   btn.addEventListener('click', () => {
@@ -324,11 +263,9 @@ function autofillDateTime() {
   }
 }
 autofillDateTime();
-// live clock — update time every 30s, but only if user hasn't touched it
 const bt = document.getElementById('bookingTime');
 if (bt) {
   bt.addEventListener('focus', () => { bt.dataset.userChanged = '1'; });
-  // live time label
   const lbl = document.getElementById('liveTimeLabel');
   function updateClockLabel() {
     if (!lbl) return;
@@ -340,95 +277,17 @@ if (bt) {
 }
 setInterval(autofillDateTime, 30000);
 
-// ===== CONFLICT CHECK (live, uses cached bookings) =====
-function timeToMin(t) {
-  if (!t) return 0;
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + (m || 0);
-}
-function minToTime(m) {
-  const h = Math.floor(m / 60);
-  const min = m % 60;
-  return String(h).padStart(2, '0') + ':' + String(min).padStart(2, '0');
-}
-function durMin(d) {
-  const n = parseInt(d, 10);
-  if (!isNaN(n) && n > 0) return n;
-  if (d.includes('1 Hour')) return 60;
-  if (d.includes('2')) return 120;
-  if (d.includes('3')) return 180;
-  if (d.includes('Unlimited')) return 1440;
-  return 60;
-}
-
-function checkConflicts(selectedPCs, time, date, duration) {
-  const bookings = _lastBookings || [];
-  const start = timeToMin(time);
-  const end = start + durMin(duration);
-  const results = [];
-  for (const b of bookings) {
-    if (b.date !== date || b.status !== 'active') continue;
-    const bPCs = (typeof b.pcs === 'string' ? (() => { try { return JSON.parse(b.pcs); } catch { return []; } })() : (b.pcs || []));
-    if (b.pc_label) bPCs.push(...b.pc_label.split(',').map(s => s.trim()));
-    const overlap = selectedPCs.some(pc => bPCs.includes(pc));
-    if (!overlap) continue;
-    const bStart = timeToMin(b.time);
-    const bEnd = bStart + durMin(b.duration);
-    // direct overlap
-    if (start < bEnd && bStart < end) {
-      results.push({ type: 'conflict', pc: selectedPCs.find(pc => bPCs.includes(pc)), name: b.name, start: b.time, end: minToTime(bEnd) });
-    } else {
-      // nearest upcoming or past
-      const gap = start - bEnd;
-      if (gap >= 0 && gap <= 180) {
-        results.push({ type: 'upcoming', pc: selectedPCs.find(pc => bPCs.includes(pc)), name: b.name, start: b.time, end: minToTime(bEnd), gap });
-      }
-    }
-  }
-  // sort: conflicts first, then nearest gaps
-  results.sort((a, b) => {
-    if (a.type === 'conflict' && b.type !== 'conflict') return -1;
-    if (a.type !== 'conflict' && b.type === 'conflict') return 1;
-    return (a.gap || 999) - (b.gap || 999);
-  });
-  return results;
-}
-
-function updateConflictDisplay() {
-  const el = document.getElementById('conflictInfo');
-  if (!el) return;
-  const date = document.querySelector('[type="date"]')?.value;
-  const time = document.getElementById('bookingTime')?.value;
-  const sel = document.getElementById('durationSelect');
-  const cust = document.getElementById('durationCustom');
-  const duration = sel?.value === 'custom' ? cust?.value : sel?.value;
-  const selectedPCs = [...document.querySelectorAll('#pcGrid input:checked')].map(c => c.value);
-  if (!date || !time || !duration || selectedPCs.length === 0) { el.textContent = ''; el.className = 'conflict-info'; return; }
-  const results = checkConflicts(selectedPCs, time, date, duration);
-  if (results.length === 0) {
-    el.textContent = 'متاح ✅';
-    el.className = 'conflict-info ok';
-    return;
-  }
-  const conflict = results.find(r => r.type === 'conflict');
-  if (conflict) {
-    el.textContent = `⛔ ${conflict.pc} محجوز من ${conflict.name} (${conflict.start} - ${conflict.end})`;
-    el.className = 'conflict-info error';
-    return;
-  }
-  const next = results[0];
-  el.textContent = `⚠️ ${next.pc} مشغول من ${next.name} الساعة ${next.start}`;
-  el.className = 'conflict-info warn';
-}
-
 // attach live listeners
-document.querySelector('#pcGrid')?.addEventListener('change', updateConflictDisplay);
-document.getElementById('bookingTime')?.addEventListener('input', updateConflictDisplay);
-document.querySelector('[type="date"]')?.addEventListener('change', updateConflictDisplay);
-document.getElementById('durationSelect')?.addEventListener('change', updateConflictDisplay);
-document.getElementById('durationCustom')?.addEventListener('input', updateConflictDisplay);
-// initial display after auto-fill
-setTimeout(updateConflictDisplay, 100);
+function bindConflictListeners() {
+  document.querySelector('#pcGrid')?.addEventListener('change', () => { updateConflictDisplay(); updatePricePreview(); });
+  document.getElementById('bookingTime')?.addEventListener('input', updateConflictDisplay);
+  document.querySelector('[type="date"]')?.addEventListener('change', updateConflictDisplay);
+  document.getElementById('durationSelect')?.addEventListener('change', () => { updateConflictDisplay(); updatePricePreview(); });
+  document.getElementById('durationCustom')?.addEventListener('input', () => { updateConflictDisplay(); updatePricePreview(); });
+  document.getElementById('balancePayRow')?.addEventListener('change', () => { updatePricePreview(); });
+  setTimeout(updateConflictDisplay, 200);
+}
+bindConflictListeners();
 
 // ===== DURATION CUSTOM =====
 function onDurationChange() {
@@ -440,6 +299,94 @@ function onDurationChange() {
   } else {
     cust.style.display = 'none';
   }
+  updatePricePreview();
+}
+
+// ===== BOOKING PRICE PREVIEW (display only — server recalculates & enforces) =====
+function selectedDurationMin() {
+  const sel = document.getElementById('durationSelect');
+  if (!sel || !sel.value) return 0;
+  if (sel.value === 'custom') {
+    const c = parseInt(document.getElementById('durationCustom')?.value, 10);
+    return isNaN(c) || c <= 0 ? 0 : c;
+  }
+  return durMin(sel.value);
+}
+function updatePricePreview() {
+  const est = document.getElementById('estimatedPrice');
+  if (!est) return;
+  const row = document.getElementById('balancePayRow');
+  const cb = document.getElementById('payWithBalanceCheck');
+  const balEl = document.getElementById('currentBalanceShown');
+  const info = document.getElementById('balancePayInfo');
+  const user = getCurrentUser();
+  const pcs = [...document.querySelectorAll('#pcGrid input:checked')].map(c => c.value);
+  const dur = selectedDurationMin();
+  const devs = _deviceCache || [];
+  let total = 0;
+  for (const pc of pcs) {
+    const d = devs.find(x => x.pc === pc) || {};
+    const rate = Number(d.type === 'vip' ? (_liveSettings.vip_price_per_hour || 0) : (_liveSettings.standard_price_per_hour || 0));
+    total += rate * (dur || 0) / 60;
+  }
+  total = Math.round(total * 100) / 100;
+  est.textContent = total;
+  if (!row || !cb) return;
+  if (!user) { row.style.display = 'none'; cb.checked = false; return; }
+  row.style.display = 'block';
+  if (balEl) balEl.textContent = user.balance || 0;
+  if (total > 0 && (user.balance || 0) >= total) {
+    cb.disabled = false;
+  } else {
+    cb.disabled = true;
+    cb.checked = false;
+  }
+  if (info) info.textContent = cb.checked ? 'Will be deducted from your balance after confirmation' : (cb.disabled && total > 0 ? 'Not enough balance for this booking' : '');
+}
+
+// ===== BOOKABLE PACKAGES (server-managed, shown in Prices section) =====
+let _packagesCache = [];
+async function loadPackages() {
+  try {
+    const r = await api('/api/packages');
+    _packagesCache = r.packages || [];
+  } catch { return; }
+  renderPackages();
+}
+function renderPackages() {
+  const wrap = document.getElementById('packagesWrap');
+  const host = document.getElementById('packagesList');
+  if (!wrap || !host) return;
+  const list = (_packagesCache || []).filter(p => p.status === 'active');
+  if (!list.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  host.innerHTML = list.map(p =>
+    '<div class="package-card" onclick="usePackage(' + p.id + ')">' +
+    '<div class="package-top"><span class="package-type ' + (p.device_type === 'vip' ? 'vip' : '') + '">' + (p.device_type === 'vip' ? '💎 VIP' : '🖥️ Standard') + '</span><span class="package-price">' + Number(p.price) + ' <small>EGP</small></span></div>' +
+    '<strong class="package-name">' + escapeHtml(p.name) + '</strong>' +
+    '<span class="package-meta">' + p.duration + ' min</span>' +
+    (p.description ? '<span class="package-desc">' + escapeHtml(p.description) + '</span>' : '') +
+    '</div>'
+  ).join('');
+}
+function usePackage(id) {
+  const p = (_packagesCache || []).find(x => x.id === id);
+  if (!p) return;
+  const sel = document.getElementById('durationSelect');
+  if (sel) {
+    const opts = [...sel.options].map(o => o.value);
+    if (opts.includes(String(p.duration))) sel.value = String(p.duration);
+    else {
+      sel.value = 'custom';
+      const c = document.getElementById('durationCustom');
+      if (c) c.value = p.duration;
+    }
+    onDurationChange();
+  }
+  updatePricePreview();
+  const bs = document.getElementById('booking');
+  if (bs) bs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showToast('🎮 Apply package: ' + p.name);
 }
 
 // ===== BOOKING FORM =====
@@ -457,47 +404,59 @@ async function submitBooking(e) {
   const sel = document.getElementById('durationSelect');
   if (sel.value === 'custom') {
     const cust = document.getElementById('durationCustom');
-    duration = cust.value;
+    duration = parseInt(cust.value, 10);
     if (!duration || duration <= 0) { showToast('⚠️ Enter valid minutes'); return; }
   } else {
-    duration = sel.value;
+    duration = durMin(sel.value);
   }
 
-  const name  = user ? user.name  : document.getElementById('bookingName').value;
-  const phone = user ? user.phone : document.getElementById('bookingPhone').value;
-  const date = f.querySelector('[type="date"]').value;
-  const time = document.getElementById('bookingTime').value;
+  const name  = user ? user.name : document.getElementById('bookingName').value.trim();
+  const phone = user ? user.phone : document.getElementById('bookingPhone').value.trim();
+  const date  = f.querySelector('[type="date"]').value;
+  const time  = document.getElementById('bookingTime').value;
 
-  // instant conflict check using cached data
-  const conflicts = checkConflicts(selectedPCs, time, date, duration);
-  const conflict = conflicts.find(r => r.type === 'conflict');
-  if (conflict) {
-    showToast(`⛔ ${conflict.pc} محجوز من ${conflict.name} (${conflict.start} - ${conflict.end})`);
-    return;
-  }
+  const btn = f.querySelector('button[type="submit"]');
+  const orig = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ ...'; }
 
-  const bookingData = {
-    id: Date.now(),
-    name:     name,
-    phone:    phone,
-    pcs:      JSON.stringify(selectedPCs),
-    pc_label: selectedPCs.join(', '),
-    duration: duration,
-    addon:    f.querySelectorAll('select')[0].value,
-    date:     date,
-    time:     time,
-    status:   'pending',
-  };
-
-  try {
-    await postBooking(bookingData);
-    showToast('تم إرسال الحجز، في انتظار موافقة الإدارة ✅');
+try {
+    const payBox = document.getElementById('payWithBalanceCheck');
+    const booking = await postBooking({
+      pcs: selectedPCs,
+      duration,
+      addon: f.querySelectorAll('select')[0].value,
+      date,
+      time,
+      pay_with_balance: !!(user && payBox && payBox.checked && !payBox.disabled),
+      ...(user ? {} : { name, phone }),
+    });
+    showToast('تم إرسال الحجز بنجاح ✅');
+    const payBox2 = document.getElementById('payWithBalanceCheck');
+    if (payBox2) payBox2.checked = false;
     f.reset();
+    if (user) { document.getElementById('bookingName').value = user.name; document.getElementById('bookingPhone').value = user.phone; }
     document.querySelectorAll('#pcGrid input:checked').forEach(c => c.checked = false);
+    document.getElementById('durationSelect').value = '';
+    onDurationChange();
     updateConflictDisplay();
+    updatePricePreview();
+    await getDevices();
     renderOccupiedPCs();
-  } catch {
-    showToast('⚠️ حدث خطأ في الإرسال، حاول مرة أخرى');
+  } catch (err) {
+    if (err.status === 409 && err.data && err.data.conflict) {
+      const c = err.data.conflict;
+      showToast(c.manual
+        ? '⛔ ' + c.pc + ' مشغول يدويًا الآن'
+        : '⛔ ' + c.pc + ' محجوز من ' + c.name + ' (' + c.start + ' - ' + c.end + ')');
+    } else if (err.status === 402 && err.data && err.data.error) {
+      showToast('⚠️ ' + err.data.error);
+    } else if (err.data && err.data.error) {
+      showToast('⚠️ ' + err.data.error);
+    } else {
+      showToast('⚠️ حدث خطأ في الإرسال، حاول مرة أخرى');
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = orig; }
   }
 }
 
@@ -510,64 +469,26 @@ function showToast(msg) {
   }
 }
 
-// ===== OCCUPIED PCS STATUS =====
-function parseDuration(d) {
-  const n = parseInt(d, 10);
-  if (!isNaN(n) && n > 0) return n;
-  if (d.includes('1 Hour')) return 60;
-  if (d.includes('2')) return 120;
-  if (d.includes('3')) return 180;
-  if (d.includes('Unlimited')) return 1440;
-  return 60;
-}
-
-function isBookingNow(b) {
-  const now = new Date();
-  const [h, m] = (b.time || '00:00').split(':').map(Number);
-  const startMin = h * 60 + m;
-  const dur = parseDuration(b.duration);
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  return nowMin >= startMin && nowMin < startMin + dur;
-}
-
-let lastPcHash = '';
-async function renderOccupiedPCs() {
+// ===== OCCUPIED PCS STATUS (server-driven) =====
+function renderOccupiedPCs() {
   const el = document.getElementById('occupiedPCs');
   if (!el) return;
-  const today = new Date().toISOString().split('T')[0];
-  let bookings;
-  try { bookings = await getBookings(); } catch { bookings = []; }
-  const hash = JSON.stringify(bookings.filter(b => b.date === today).map(b => b.id + b.status + (b.pcs || '') + (b.pc_label || '')));
-  if (hash === lastPcHash) return;
-  lastPcHash = hash;
-  const active = bookings.filter(b => b.status === 'active' && b.date === today);
-  const busyPCs = [...new Set(active.filter(isBookingNow).flatMap(b => {
-    if (typeof b.pcs === 'string') { try { return JSON.parse(b.pcs); } catch {} }
-    if (Array.isArray(b.pcs)) return b.pcs;
-    if (b.pc_label) return b.pc_label.split(',').map(s => s.trim());
-    if (b.pc) return b.pc.split(',').map(s => s.trim());
-    return [];
-  }))];
-  const upcomingPCs = [...new Set(active.filter(b => !isBookingNow(b)).flatMap(b => {
-    if (typeof b.pcs === 'string') { try { return JSON.parse(b.pcs); } catch {} }
-    if (Array.isArray(b.pcs)) return b.pcs;
-    if (b.pc_label) return b.pc_label.split(',').map(s => s.trim());
-    if (b.pc) return b.pc.split(',').map(s => s.trim());
-    return [];
-  }))];
-  const allPCs = ['PC 1','PC 2','PC 3','PC 4','PC 7','PC 8','PC 9','PC 10','PC 11','PC 12','VIP 1','VIP 2'];
-  el.innerHTML = allPCs.map(pc => {
-    if (busyPCs.includes(pc)) return `<span class="pc-status-chip busy">🔴 ${pc}</span>`;
-    if (upcomingPCs.includes(pc)) return `<span class="pc-status-chip upcoming">🟡 ${pc}</span>`;
-    return `<span class="pc-status-chip free">🟢 ${pc}</span>`;
+  const devs = _deviceCache || [];
+  if (devs.length === 0) return;
+  const hash = devs.map(d => d.pc + '|' + d.color + '|' + d.label + '|' + d.manual).join(',');
+  if (hash === _lastPcHash) return;
+  _lastPcHash = hash;
+  el.innerHTML = devs.map(pc => {
+    if (pc.color === 'red') return `<span class="pc-status-chip busy" title="${escAttr(pc.detail)}">🔴 ${pc.pc}</span>`;
+    if (pc.color === 'yellow') return `<span class="pc-status-chip upcoming" title="${escAttr(pc.detail)}">🟡 ${pc.pc}</span>`;
+    return `<span class="pc-status-chip free" title="Available">🟢 ${pc.pc}</span>`;
   }).join('');
-
-  // points tracking for logged-in user
-  trackPoints(active);
-  // sync balance/points with server for UI update
-  syncUserDisplay();
-  // refresh live conflict display
   updateConflictDisplay();
+  syncUserDisplay();
+}
+
+function escAttr(s) {
+  return String(s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
 async function syncUserDisplay() {
@@ -575,62 +496,104 @@ async function syncUserDisplay() {
   if (!user) return;
   const lastSync = parseInt(localStorage.getItem('gzg_last_sync_' + user.id) || '0', 10);
   const now = Date.now();
-  if (now - lastSync < 5000) return;
+  if (now - lastSync < 10000) {
+    updateUserMenuDisplay();
+    return;
+  }
   try {
-    const acc = await getAccountByPhone(user.phone);
-    if (!acc) return;
-    let changed = false;
-    if ((acc.balance || 0) !== (user.balance || 0)) { user.balance = acc.balance || 0; changed = true; }
-    if ((acc.points || 0) !== (user.points || 0)) { user.points = acc.points || 0; changed = true; }
-    if (acc.avatar && acc.avatar !== user.avatar) { user.avatar = acc.avatar; changed = true; }
-    if (changed) {
-      localStorage.setItem(AUTH_KEY, JSON.stringify(user));
-      updateUserMenuDisplay();
-    }
-    // check membership frame
-    const avatar = document.getElementById('userAvatar');
-    if (avatar) {
-      const tier = await getActiveMembershipTier(user.id);
-      if (tier && TIER_COLORS[tier]) {
-        avatar.style.border = '3px solid ' + TIER_COLORS[tier];
-        avatar.style.boxShadow = '0 0 12px ' + TIER_COLORS[tier] + '88';
-      } else {
-        avatar.style.border = '2px solid #6a00ff';
-        avatar.style.boxShadow = 'none';
-      }
-    }
+    const r = await api('/api/auth/me');
+    if (!r.account) return;
+    saveUser(r.account);
+    updateUserMenuDisplay();
+    applyMembershipFrame();
     localStorage.setItem('gzg_last_sync_' + user.id, String(now));
-  } catch {}
+  } catch { updateUserMenuDisplay(); }
 }
 
-async function trackPoints(active) {
-  const user = getCurrentUser();
-  if (!user) return;
-  // check if user has an active booking (match by phone)
-  const hasActive = active.some(b => b.phone === user.phone);
-  if (!hasActive) return;
-  const lastKey = 'gzg_last_point_' + user.id;
-  const last = parseInt(localStorage.getItem(lastKey) || '0', 10);
-  const now = Date.now();
-  if (now - last < 30000) return; // 30s cooldown
-  try {
-    const acc = await getAccountByPhone(user.phone);
-    if (!acc) return;
-    const newPoints = (acc.points || 0) + 1;
-    await patchAccount(acc.id, { points: newPoints, last_point_update: new Date().toISOString() });
-    localStorage.setItem(lastKey, String(now));
-    // update local user data
-    user.points = newPoints;
-    localStorage.setItem('gzg_user', JSON.stringify(user));
-    updateUserMenuDisplay();
-  } catch {}
+async function refreshDevices() {
+  await getDevices();
+  renderOccupiedPCs();
 }
-renderOccupiedPCs();
-let statusTimer = setInterval(() => renderOccupiedPCs(), 15000 + jitter());
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) clearInterval(statusTimer);
-  else { renderOccupiedPCs(); statusTimer = setInterval(() => renderOccupiedPCs(), 15000 + jitter()); }
-});
+
+// ===== REAL-TIME (WebSocket) =====
+function handleWSEvent(ev) {
+  switch (ev.type) {
+    case 'ping':
+      break;
+    case 'accounts_changed': {
+      const user = getCurrentUser();
+      if (user && ev.data && ev.data.account) {
+        const a = ev.data.account;
+if (a.id === user.id) {
+          const merged = { ...user, balance: a.balance, points: a.points, avatar: a.avatar, name: a.name, username: a.username, favorite_game: a.favorite_game, online: a.online };
+          saveUser(merged);
+          updateUserMenuDisplay();
+          applyMembershipFrame();
+          updatePricePreview();
+        }
+      }
+      if (ev.data && ev.data.deleted === user?.id) {
+        clearSession();
+        applyAuthUI();
+      }
+      break;
+    }
+    case 'presence_changed': {
+      const user = getCurrentUser();
+      if (user && ev.data && ev.data.account && ev.data.account.id === user.id) {
+        user.online = !!ev.data.account.online;
+        saveUser(user);
+      }
+      break;
+    }
+    case 'devices_changed':
+      _deviceCache = ev.data && ev.data.devices ? ev.data.devices : [];
+      renderOccupiedPCs();
+      renderPcGrid(_deviceCache);
+      break;
+    case 'content_changed':
+      if (ev.data && ev.data.key) {
+        contentCache[ev.data.key] = ev.data.value;
+        applyContentSection(ev.data.key);
+      }
+      break;
+case 'bookings_changed':
+      getBookings().then(() => { updateConflictDisplay(); });
+      break;
+    case 'packages_changed':
+      loadPackages();
+      break;
+    case 'memberships_changed':
+      applyMembershipFrame();
+      break;
+    case 'settings_changed':
+      if (document.getElementById('convertPointsDisplay')) {
+        const u = getCurrentUser();
+        if (u) document.getElementById('convertPointsDisplay').textContent = u.points || 0;
+      }
+      break;
+  }
+}
+
+function connectRealtime() {
+  try { _ws = new WebSocket(WS_URL); } catch { scheduleReconnect(); return; }
+  _ws.onopen = () => { _wsReconnectDelay = 2000; };
+  _ws.onmessage = e => {
+    let m;
+    try { m = JSON.parse(e.data); } catch { return; }
+    handleWSEvent(m);
+  };
+  _ws.onclose = () => scheduleReconnect();
+  _ws.onerror = () => { try { _ws.close(); } catch {} };
+}
+function scheduleReconnect() {
+  setTimeout(connectRealtime, _wsReconnectDelay);
+  _wsReconnectDelay = Math.min(_wsReconnectDelay * 1.5, 15000);
+}
+
+// fallback background refresh (keeps UI consistent even if WS is blocked)
+setInterval(() => { refreshDevices(); getBookings().then(() => updateConflictDisplay()); }, 20000);
+setInterval(() => syncUserDisplay(), 30000);
 
 // ===== ACTIVE NAV LINK ON SCROLL =====
 const sections  = document.querySelectorAll('section[id], header[id]');
@@ -641,9 +604,7 @@ const sectionObserver = new IntersectionObserver(entries => {
     if (entry.isIntersecting) {
       navLinks.forEach(link => {
         link.classList.remove('active-link');
-        if (link.getAttribute('href') === '#' + entry.target.id) {
-          link.classList.add('active-link');
-        }
+        if (link.getAttribute('href') === '#' + entry.target.id) link.classList.add('active-link');
       });
     }
   });
@@ -651,47 +612,38 @@ const sectionObserver = new IntersectionObserver(entries => {
 
 sections.forEach(s => sectionObserver.observe(s));
 
-// Inject active link style
-const style = document.createElement('style');
-style.textContent = `.nav-links a.active-link { color:#fff; background:rgba(106,0,255,0.2); box-shadow:0 0 12px rgba(106,0,255,0.4); }`;
-document.head.appendChild(style);
+const navStyle = document.createElement('style');
+navStyle.textContent = `.nav-links a.active-link { color:#fff; background:rgba(106,0,255,0.2); box-shadow:0 0 12px rgba(106,0,255,0.4); }`;
+document.head.appendChild(navStyle);
 
-// ===== MOBILE — scroll to section on button click =====
-(function(){
+// ===== MOBILE — scroll to section =====
+(function () {
   if (window.innerWidth > 768) return;
-
   const bookSection = document.getElementById('booking');
-
   function scrollBooking(e) {
     if (window.innerWidth > 768) return;
     e.preventDefault();
     if (bookSection) bookSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-
   document.getElementById('bookPcBtn')?.addEventListener('click', scrollBooking);
   document.querySelectorAll('.membership-btn').forEach(b => b.addEventListener('click', scrollBooking));
 })();
 
-// ===== GLITCH EFFECT on logo =====
+// ===== GLITCH LOGO =====
 const logoTitle = document.querySelector('.logo-title');
 if (logoTitle) {
   setInterval(() => {
-    logoTitle.style.textShadow = `0 0 8px rgba(255,0,60,0.8), 2px 0 rgba(106,0,255,0.6)`;
+    logoTitle.style.textShadow = '0 0 8px rgba(255,0,60,0.8), 2px 0 rgba(106,0,255,0.6)';
     setTimeout(() => { logoTitle.style.textShadow = ''; }, 80);
   }, 4000);
 }
 
 // =========================================
-// ===== ACCOUNTS / AUTH SYSTEM =====
+// ===== AUTH =====
 // =========================================
-const AUTH_KEY = 'gzg_user';
 let userLoginAttempts = 0;
 const MAX_USER_LOGIN_ATTEMPTS = 5;
 let userLoginLockout = 0;
-
-function getCurrentUser() {
-  try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch { return null; }
-}
 
 function openAuth() {
   document.getElementById('authModal').classList.add('show');
@@ -722,8 +674,16 @@ async function handleLogin(e) {
   const phone = document.getElementById('loginPhone').value.trim();
   const password = document.getElementById('loginPassword').value;
   try {
-    const acc = await getAccountByPhone(phone);
-    if (!acc || acc.password !== password) {
+    const r = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ phone, password }) });
+    userLoginAttempts = 0;
+    localStorage.setItem(TOKEN_KEY, r.token);
+    saveUser(r.account);
+    closeAuth();
+    applyAuthUI();
+    startHeartbeat();
+    showToast('👋 Welcome back, ' + r.account.name + '!');
+  } catch (e) {
+    if (e.status === 401) {
       userLoginAttempts++;
       if (userLoginAttempts >= MAX_USER_LOGIN_ATTEMPTS) {
         userLoginLockout = now + 30000;
@@ -732,48 +692,46 @@ async function handleLogin(e) {
       } else {
         document.getElementById('loginError').textContent = 'Wrong phone or password (' + (MAX_USER_LOGIN_ATTEMPTS - userLoginAttempts) + ' left)';
       }
-      return;
+    } else {
+      document.getElementById('loginError').textContent = 'Error: ' + (e.data && e.data.error ? e.data.error : e.message);
     }
-    userLoginAttempts = 0;
-    await patchAccount(acc.id, { last_login: new Date().toISOString() });
-    localStorage.setItem(AUTH_KEY, JSON.stringify({ id: acc.id, name: acc.name, phone: acc.phone, avatar: acc.avatar || '', balance: acc.balance || 0, points: acc.points || 0 }));
-    closeAuth();
-    applyAuthUI();
-    showToast('👋 Welcome back, ' + acc.name + '!');
-  } catch (e) { document.getElementById('loginError').textContent = 'Error: ' + e.message; }
+  }
 }
 
 async function handleRegister(e) {
   e.preventDefault();
   const name = document.getElementById('regName').value.trim();
+  const username = (document.getElementById('regUsername')?.value || '').trim();
   const phone = document.getElementById('regPhone').value.trim();
   const password = document.getElementById('regPassword').value;
   if (password.length < 4) { document.getElementById('regError').textContent = 'Password must be at least 4 characters'; return; }
   try {
-    const existing = await getAccountByPhone(phone);
-    if (existing) { document.getElementById('regError').textContent = 'Phone already registered'; return; }
-    const acc = await postAccount({ id: Date.now(), name, phone, password, avatar: '', balance: 0, points: 0 });
-    await patchAccount(acc.id, { last_login: new Date().toISOString() });
-    localStorage.setItem(AUTH_KEY, JSON.stringify({ id: acc.id, name: acc.name, phone: acc.phone, avatar: '', balance: 0, points: 0 }));
+    const r = await api('/api/auth/register', { method: 'POST', body: JSON.stringify({ name, username: username || undefined, phone, password }) });
+    localStorage.setItem(TOKEN_KEY, r.token);
+    saveUser(r.account);
     closeAuth();
     applyAuthUI();
-    showToast('🎉 Welcome, ' + name + '!');
-  } catch (e) { document.getElementById('regError').textContent = 'Error: ' + e.message; }
+    startHeartbeat();
+    showToast('🎉 Welcome, ' + r.account.name + '!');
+  } catch (e) {
+    if (e.status === 409) document.getElementById('regError').textContent = e.data && e.data.error ? e.data.error : 'Phone already registered';
+    else document.getElementById('regError').textContent = 'Error: ' + e.message;
+  }
 }
 
 function handleLogout() {
-  localStorage.removeItem(AUTH_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) { try { fetch(API_BASE + '/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); } catch {} }
+  stopHeartbeat();
+  clearSession();
   applyAuthUI();
   closeUserDropdown();
   showToast('👋 Logged out');
 }
 
 function switchAccount() {
-  localStorage.removeItem(AUTH_KEY);
-  applyAuthUI();
-  closeUserDropdown();
+  handleLogout();
   openAuth();
-  showToast('👋 Logged out');
 }
 
 async function handleDeleteAccount() {
@@ -781,8 +739,9 @@ async function handleDeleteAccount() {
   const user = getCurrentUser();
   if (!user) return;
   try {
-    await deleteAccountSupabase(user.id);
-    localStorage.removeItem(AUTH_KEY);
+    await api('/api/accounts/' + user.id, { method: 'DELETE' });
+    stopHeartbeat();
+    clearSession();
     applyAuthUI();
     closeUserDropdown();
     showToast('🗑️ Account deleted');
@@ -794,7 +753,6 @@ function openChangePassword() {
   document.getElementById('passwordModal').classList.add('show');
   document.getElementById('passwordError').textContent = '';
 }
-
 function closePasswordModal() {
   document.getElementById('passwordModal').classList.remove('show');
 }
@@ -813,7 +771,9 @@ async function changePassword(e) {
     document.getElementById('newPassword').value = '';
     document.getElementById('confirmPassword').value = '';
     showToast('🔑 Password changed');
-  } catch { document.getElementById('passwordError').textContent = 'Error changing password'; }
+  } catch (e) {
+    document.getElementById('passwordError').textContent = e.data && e.data.error ? e.data.error : 'Error changing password';
+  }
 }
 
 function openUploadAvatar() {
@@ -821,7 +781,6 @@ function openUploadAvatar() {
   document.getElementById('avatarModal').classList.add('show');
   document.getElementById('avatarError').textContent = '';
 }
-
 function closeAvatarModal() {
   document.getElementById('avatarModal').classList.remove('show');
 }
@@ -831,18 +790,18 @@ async function uploadAvatar(e) {
   const file = document.getElementById('avatarInput').files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = async function() {
-    const dataUrl = reader.result;
+  reader.onload = async function () {
     const user = getCurrentUser();
     if (!user) return;
     try {
-      await patchAccount(user.id, { avatar: dataUrl });
-      user.avatar = dataUrl;
-      localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+      const acc = await patchAccount(user.id, { avatar: reader.result });
+      saveUser({ ...user, avatar: acc.avatar });
       applyAuthUI();
       closeAvatarModal();
       showToast('🖼️ Photo updated');
-    } catch { document.getElementById('avatarError').textContent = 'Error uploading'; }
+    } catch (err) {
+      document.getElementById('avatarError').textContent = err.data && err.data.error ? err.data.error : 'Error uploading';
+    }
   };
   reader.readAsDataURL(file);
 }
@@ -857,27 +816,11 @@ async function refreshUserData() {
   const user = getCurrentUser();
   if (!user) return;
   try {
-    const acc = await getAccountByPhone(user.phone);
-    if (!acc) return;
-    user.balance = acc.balance || 0;
-    user.points = acc.points || 0;
-    user.avatar = acc.avatar || user.avatar;
-    localStorage.setItem(AUTH_KEY, JSON.stringify(user));
-    const ib = document.getElementById('inlineBalance');
-    const ip = document.getElementById('inlinePoints');
-    if (ib) ib.textContent = user.balance;
-    if (ip) ip.textContent = user.points;
-    // refresh membership frame
-    const avatar = document.getElementById('userAvatar');
-    if (avatar) {
-      const tier = await getActiveMembershipTier(user.id);
-      if (tier && TIER_COLORS[tier]) {
-        avatar.style.border = '3px solid ' + TIER_COLORS[tier];
-        avatar.style.boxShadow = '0 0 12px ' + TIER_COLORS[tier] + '88';
-      } else {
-        avatar.style.border = '2px solid #6a00ff';
-        avatar.style.boxShadow = 'none';
-      }
+    const r = await api('/api/auth/me');
+    if (r.account) {
+      saveUser(r.account);
+      updateUserMenuDisplay();
+      applyMembershipFrame();
     }
   } catch {}
 }
@@ -896,33 +839,29 @@ function updateUserMenuDisplay() {
 }
 
 function closeUserDropdown() {
-  document.getElementById('userDropdown').classList.remove('show');
+  const dd = document.getElementById('userDropdown');
+  if (dd) dd.classList.remove('show');
 }
 
-// close dropdown on outside click
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
   const menu = document.getElementById('userMenu');
   const dd = document.getElementById('userDropdown');
   if (menu && dd && !menu.contains(e.target)) dd.classList.remove('show');
 });
 
 // ===== MEMBERSHIPS =====
-async function postMembership(d) { d.id = d.id || Date.now(); d.created_at = d.created_at || new Date().toISOString(); await _loadStore(); _store.memberships.push(d); await _saveStore('memberships'); return d; }
-async function patchMembership(id, d) { await _loadStore(); const i = _store.memberships.findIndex(x => x.id === id); if (i !== -1) { Object.assign(_store.memberships[i], d); await _saveStore('memberships'); return _store.memberships[i]; } return null; }
-
 async function requestMembership(el) {
   const user = getCurrentUser();
   if (!user) { showToast('👤 Please login first'); return; }
   const tier = el.dataset.tier;
   const amount = parseInt(el.dataset.amount);
   try {
-    let all = [];
-    try { all = await getMemberships(); } catch {}
-    const pending = all.filter(m => m.account_id === user.id && m.tier === tier && m.status === 'pending');
-    if (pending.length > 0) { showToast('⚠️ Request already sent for ' + tier); return; }
-    await postMembership({ account_id: user.id, tier, amount, status: 'pending' });
+    await postMembership({ tier, amount });
     showToast('✅ ' + tier + ' request sent to admin!');
-  } catch { showToast('⚠️ Error sending request'); }
+  } catch (e) {
+    if (e.status === 409) showToast('⚠️ Request already sent for ' + tier);
+    else showToast('⚠️ ' + (e.data && e.data.error ? e.data.error : 'Error sending request'));
+  }
 }
 
 // ===== CONVERT POINTS =====
@@ -936,7 +875,9 @@ function openConvertPoints() {
   document.getElementById('convertError').textContent = '';
   document.getElementById('convertModal').classList.add('show');
 }
-function closeConvertModal() { document.getElementById('convertModal').classList.remove('show'); }
+function closeConvertModal() {
+  document.getElementById('convertModal').classList.remove('show');
+}
 
 async function convertPoints(e) {
   e.preventDefault();
@@ -945,33 +886,153 @@ async function convertPoints(e) {
   const pts = parseInt(document.getElementById('convertAmount').value);
   if (!pts || pts < 10) { document.getElementById('convertError').textContent = 'Minimum 10 points'; return; }
   if (pts > (user.points || 0)) { document.getElementById('convertError').textContent = 'Not enough points'; return; }
-  const egp = Math.floor(pts / 10);
   try {
-    await patchAccount(user.id, { points: (user.points || 0) - pts, balance: (user.balance || 0) + egp });
-    user.points = (user.points || 0) - pts;
-    user.balance = (user.balance || 0) + egp;
-    localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+    const r = await api('/api/accounts/' + user.id + '/convert-points', { method: 'POST', body: JSON.stringify({ points: pts }) });
+    saveUser(r.account);
     closeConvertModal();
     applyAuthUI();
-    showToast('🪙 Converted ' + pts + ' pts → ' + egp + ' EGP');
-  } catch { document.getElementById('convertError').textContent = 'Error converting'; }
+    showToast('🪙 Converted ' + pts + ' pts → ' + r.egp + ' EGP');
+  } catch (e) {
+    document.getElementById('convertError').textContent = e.data && e.data.error ? e.data.error : 'Error converting';
+  }
 }
 
-// ===== ACTIVE MEMBERSHIP (for avatar frame) =====
-async function getActiveMembershipTier(userId) {
+// ===== FAVORITE GAME =====
+function openFavoriteGame() {
+  const user = getCurrentUser();
+  if (!user) { showToast('👤 Please login first'); return; }
+  closeUserDropdown();
+  const fav = document.getElementById('favGameSelect');
+  fav.value = user.favorite_game || '';
+  document.getElementById('favGameError').textContent = '';
+  document.getElementById('favGameModal').classList.add('show');
+}
+function closeFavoriteGame() {
+  document.getElementById('favGameModal').classList.remove('show');
+}
+async function saveFavoriteGame(e) {
+  e.preventDefault();
+  const user = getCurrentUser();
+  if (!user) return;
+  const game = document.getElementById('favGameSelect').value;
   try {
-    const all = await getMemberships();
-    const approved = all.filter(m => m.account_id === userId && m.status === 'approved');
-    if (approved.length === 0) return null;
-    // return the most recent approved
-    approved.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    return approved[0].tier;
-  } catch { return null; }
+    const acc = await patchAccount(user.id, { favorite_game: game });
+    saveUser({ ...user, favorite_game: acc.favorite_game });
+    closeFavoriteGame();
+    showToast('🎮 Favorite game saved');
+} catch (err) {
+    document.getElementById('favGameError').textContent = 'Error saving';
+  }
 }
 
+// ===== SUGGEST A GAME =====
+function openSuggestGame() {
+  const user = getCurrentUser();
+  if (!user) { showToast('👤 Please login first'); return; }
+  closeUserDropdown();
+  document.getElementById('suggestGameName').value = '';
+  document.getElementById('suggestGameImage').value = '';
+  document.getElementById('suggestError').textContent = '';
+  document.getElementById('suggestModal').classList.add('show');
+}
+function closeSuggestGame() {
+  document.getElementById('suggestModal').classList.remove('show');
+}
+async function submitSuggestion(e) {
+  e.preventDefault();
+  const user = getCurrentUser();
+  if (!user) return;
+  const name = document.getElementById('suggestGameName').value.trim();
+  const errEl = document.getElementById('suggestError');
+  if (!name) { errEl.textContent = 'Game name is required'; return; }
+  const file = document.getElementById('suggestGameImage').files[0];
+  let image = '';
+  if (file) {
+    if (file.size > 2000000) { errEl.textContent = 'Image too large (max 2MB)'; return; }
+    image = await new Promise(resolve => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(String(fr.result || ''));
+      fr.onerror = () => resolve('');
+      fr.readAsDataURL(file);
+    });
+    if (!image.startsWith('data:image/')) { errEl.textContent = 'Invalid image'; return; }
+  }
+  errEl.textContent = '';
+  try {
+    const r = await api('/api/suggestions', { method: 'POST', body: JSON.stringify({ game_name: name, image }) });
+    closeSuggestGame();
+    showToast(r.already_in_library && r.existing
+      ? '💡 Thanks — "' + name + '" is already in the library'
+      : '💡 Suggestion sent! Our team will review it.');
+  } catch (err) {
+    if (err.status === 401) { closeSuggestGame(); showToast('👤 Please login first'); }
+    else errEl.textContent = err.data && err.data.error ? err.data.error : 'Error submitting';
+  }
+}
+
+// ===== MY BOOKINGS =====
+function openMyBookings() {
+  closeUserDropdown();
+  const list = document.getElementById('myBookingsList');
+  list.innerHTML = '<p style="color:#888;text-align:center;">Loading...</p>';
+  document.getElementById('myBookingsModal').classList.add('show');
+  getBookings().then(rows => {
+    const mine = rows || [];
+    if (!mine.length) { list.innerHTML = '<p style="color:#888;text-align:center;">No bookings yet</p>'; return; }
+    const LABEL = { pending: '⏳ Pending', active: '🔴 Active', completed: '✓ Completed', cancelled: '❌ Cancelled' };
+list.innerHTML = mine.map(b => {
+      const pcs = (() => { try { return JSON.parse(b.pcs || '[]').join(', '); } catch { return b.pcs || ''; } })();
+      const paid = Number(b.balance_paid) > 0;
+      const canc = b.status === 'pending' ? `<button class="cancel-bt" onclick="cancelMyBooking(${b.id}, this)" ${paid ? 'data-paid="1" data-amount="' + Number(b.balance_paid) + '"' : ''}>✕ Cancel</button>` : '';
+      return `<div class="my-booking">
+        <div><strong>${escHtml(b.name)}</strong> · ${escHtml(pcs)}</div>
+        <div class="my-booking-meta">${escHtml(b.date)} ${escHtml(b.time)} · ${b.duration || 'Open'} min${paid ? ' · 💳 ' + Number(b.balance_paid) + ' EGP paid' : ''}</div>
+        <span class="my-booking-status">${LABEL[b.status] || b.status}</span>${canc}
+      </div>`;
+    }).join('');
+  }).catch(() => { list.innerHTML = '<p style="color:#888;text-align:center;">Error loading</p>'; });
+}
+async function cancelMyBooking(id, btn) {
+  const paid = btn && btn.dataset.paid === '1';
+  if (!confirm('Cancel this reservation?' + (paid ? '\n\nThe ' + Number(btn.dataset.amount) + ' EGP you paid will be refunded to your balance.' : ''))) return;
+  try {
+    await api('/api/bookings/' + id, { method: 'PATCH', body: JSON.stringify({ status: 'cancelled' }) });
+    showToast(paid ? '✕ Cancelled — your balance was refunded' : '✕ Booking cancelled');
+    openMyBookings();
+    refreshDevices();
+    refreshUserData();
+  } catch (err) {
+    showToast((err.data && err.data.error) || 'Cannot cancel — it may have already started', true);
+  }
+}
+function closeMyBookings() {
+  document.getElementById('myBookingsModal').classList.remove('show');
+}
+
+// ===== ACTIVE MEMBERSHIP FRAME =====
 const TIER_COLORS = { BRONZE: '#cd7f32', SILVER: '#c0c0c0', GOLD: '#ffd700', DIAMOND: '#00ffff' };
 
-async function applyAuthUI() {
+async function applyMembershipFrame() {
+  const avatar = document.getElementById('userAvatar');
+  if (!avatar) return;
+  const user = getCurrentUser();
+  if (!user) { avatar.style.border = ''; avatar.style.boxShadow = ''; return; }
+  try {
+    const approved = [];
+    try { (await getMemberships()).forEach(m => { if (m.account_id === user.id && m.status === 'approved') approved.push(m); }); } catch {}
+    approved.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const tier = approved[0] && approved[0].tier;
+    if (tier && TIER_COLORS[tier]) {
+      avatar.style.border = '3px solid ' + TIER_COLORS[tier];
+      avatar.style.boxShadow = '0 0 12px ' + TIER_COLORS[tier] + '88';
+    } else {
+      avatar.style.border = '2px solid #6a00ff';
+      avatar.style.boxShadow = 'none';
+    }
+  } catch {}
+}
+
+function applyAuthUI() {
   const user = getCurrentUser();
   const menu = document.getElementById('userMenu');
   const avatar = document.getElementById('userAvatar');
@@ -982,50 +1043,38 @@ async function applyAuthUI() {
   if (user) {
     if (!user.balance) user.balance = 0;
     if (!user.points) user.points = 0;
-    localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+    saveUser(user);
     const heroBtn = document.getElementById('heroLoginBtn');
     if (heroBtn) heroBtn.style.display = 'none';
     menu.style.display = 'inline-flex';
-    avatar.src = user.avatar || 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#6a00ff"/><text x="16" y="21" text-anchor="middle" fill="#fff" font-family="Arial" font-size="16" font-weight="bold">' + user.name.charAt(0).toUpperCase() + '</text></svg>');
-    // hide camera icon if custom photo set
+    avatar.src = user.avatar || 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#6a00ff"/><text x="16" y="21" text-anchor="middle" fill="#fff" font-family="Arial" font-size="16" font-weight="bold">' + (user.name || '?').charAt(0).toUpperCase() + '</text></svg>');
     const camIcon = document.querySelector('.avatar-edit');
     if (camIcon) camIcon.style.display = user.avatar ? 'none' : 'flex';
     name.textContent = user.name;
     if (bal) bal.textContent = user.balance;
     if (pts) pts.textContent = user.points;
 
-    // nav badges
     const ib = document.getElementById('inlineBalance');
     const ip = document.getElementById('inlinePoints');
     if (ib) ib.textContent = user.balance;
     if (ip) ip.textContent = user.points;
 
-    // auto-fill & hide booking name/phone
-    const bRow = document.getElementById('bookingNameRow');
+const bRow = document.getElementById('bookingNameRow');
     if (bRow) bRow.style.display = 'none';
     document.getElementById('bookingName').value = user.name;
     document.getElementById('bookingPhone').value = user.phone;
 
-    // membership frame
-    const tier = await getActiveMembershipTier(user.id);
-    if (tier && TIER_COLORS[tier]) {
-      avatar.style.border = '3px solid ' + TIER_COLORS[tier];
-      avatar.style.boxShadow = '0 0 12px ' + TIER_COLORS[tier] + '88';
-    } else {
-      avatar.style.border = '2px solid #6a00ff';
-      avatar.style.boxShadow = 'none';
-    }
+    applyMembershipFrame();
+    updatePricePreview();
   } else {
     const heroBtn = document.getElementById('heroLoginBtn');
     if (heroBtn) heroBtn.style.display = '';
-    menu.style.display = 'none';
-    const bRow = document.getElementById('bookingNameRow');
+    if (menu) menu.style.display = 'none';
+const bRow = document.getElementById('bookingNameRow');
     if (bRow) bRow.style.display = '';
+    updatePricePreview();
   }
 }
-
-// restore session on page load
-applyAuthUI();
 
 function openAvatarLightbox() {
   const avatar = document.getElementById('userAvatar');
@@ -1035,7 +1084,6 @@ function openAvatarLightbox() {
   img.src = avatar.src;
   document.getElementById('avatarLightbox').classList.add('show');
 }
-
 function closeAvatarLightbox() {
   document.getElementById('avatarLightbox').classList.remove('show');
 }
@@ -1047,33 +1095,322 @@ function startHeartbeat() {
   if (!user || !user.id) return;
   if (heartbeatTimer) clearInterval(heartbeatTimer);
   const beat = () => {
-    patchAccount(user.id, { last_seen: new Date().toISOString() }).catch(() => {});
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) return;
+    fetch(API_BASE + '/api/auth/heartbeat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({}) }).catch(() => {});
   };
   beat();
   heartbeatTimer = setInterval(beat, 30000);
 }
-// start heartbeat on login + after page load if logged in
-const origHandleLogin = window.handleLogin;
-if (origHandleLogin) {
-  window.handleLogin = function(...args) {
-    const r = origHandleLogin.apply(this, args);
-    startHeartbeat();
-    return r;
-  };
+function stopHeartbeat() {
+  if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    try { navigator.sendBeacon(API_BASE + '/api/auth/heartbeat?token=' + encodeURIComponent(token), JSON.stringify({ offline: true })); } catch {}
+  }
 }
-const origHandleRegister = window.handleRegister;
-if (origHandleRegister) {
-  window.handleRegister = function(...args) {
-    const r = origHandleRegister.apply(this, args);
-    startHeartbeat();
-    return r;
-  };
-}
-startHeartbeat();
-// mark offline on tab close
 window.addEventListener('beforeunload', () => {
-  const user = getCurrentUser();
-  if (user && user.id) {
-    try { patchAccount(user.id, { last_seen: new Date(0).toISOString() }); } catch {}
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    try { navigator.sendBeacon(API_BASE + '/api/auth/heartbeat?token=' + encodeURIComponent(token), JSON.stringify({ offline: true })); } catch {}
   }
 });
+
+function escHtml(s) {
+  if (s == null) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ===== INIT =====
+(async function init() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    try {
+      const r = await api('/api/auth/me');
+      if (r.account) {
+        saveUser(r.account);
+        applyAuthUI();
+        startHeartbeat();
+      } else {
+        clearSession();
+      }
+    } catch (e) {
+      if (e.status === 401) clearSession();
+    }
+  }
+  applyAuthUI();
+  connectRealtime();
+  await getDevices();
+  renderOccupiedPCs();
+  renderPcGrid(_deviceCache);
+  await loadContent();
+  applyWebsiteContent();
+  if (getCurrentUser()) startHeartbeat();
+  loadPackages();
+  updatePricePreview();
+})();/* =========================================
+   WEBSITE CONTENT MANAGER (CMS � PART 2)
+   Renders site sections from /api/content,
+   updates live when the server broadcasts
+   content_changed over WebSocket.
+   ========================================= */
+let contentCache = {};
+const _appliedHashes = {};
+let _liveSettings = {};
+
+async function loadContent() {
+  try {
+    const r = await api('/api/content');
+    contentCache = r.content || {};
+  } catch {}
+}
+
+function _memo(key, renderFn) {
+  const h = JSON.stringify(contentCache[key] == null ? null : contentCache[key]);
+  if (_appliedHashes[key] === h) return;
+  _appliedHashes[key] = h;
+  try { renderFn(contentCache[key]); } catch {}
+}
+
+function sectionEl(key) {
+  return document.getElementById(key);
+}
+function setSectionHeading(section, label, titleBefore, glow) {
+  if (!section) return;
+  const lb = section.querySelector('.section-label');
+  const tt = section.querySelector('.section-title');
+  if (lb && label != null) lb.textContent = label;
+  if (tt) {
+    if (titleBefore != null && glow != null) tt.innerHTML = escapeHtml(titleBefore) + ' <span class="glow-text">' + escapeHtml(glow) + '</span>';
+    else if (titleBefore != null) tt.textContent = titleBefore;
+  }
+}
+function applySite(v) {
+  if (!v) return;
+  if (v.title) document.title = v.title;
+  const navBrand = document.querySelector('.nav-brand');
+  if (navBrand) navBrand.textContent = (v.icon || '?') + ' ' + (v.navBrand || 'GZG');
+  const lp = document.getElementById('logoTitle');
+  if (lp && v.name) lp.textContent = v.name;
+  const ls = document.getElementById('logoSub');
+  if (ls && v.sub) ls.textContent = v.sub;
+  const li = document.getElementById('logoIcon');
+  if (li) li.innerHTML = v.logoImage ? '<img src="' + escapeAttr(v.logoImage) + '" alt="logo" style="height:56px;max-width:220px;object-fit:contain;"/>' : escapeHtml(v.icon || '?');
+  const fl = document.getElementById('footerLogo');
+  if (fl) fl.textContent = (v.icon || '?') + ' ' + (v.footerName || '');
+}
+function applyHero(v) {
+  if (!v) return;
+  const tag = document.getElementById('heroTagline');
+  if (tag) tag.textContent = v.tagline;
+  const bg = document.getElementById('heroBg');
+  if (bg) bg.style.backgroundImage = v.bgImage ? 'url("' + escapeAttr(v.bgImage) + '")' : '';
+  const book = document.getElementById('bookPcBtn');
+  if (book) {
+    book.style.display = v.btnBook && v.btnBook.visible === false ? 'none' : '';
+    if (v.btnBook && v.btnBook.label) book.textContent = v.btnBook.label;
+    if (v.btnBook && v.btnBook.href) book.setAttribute('href', v.btnBook.href);
+  }
+  const login = document.getElementById('heroLoginBtn');
+  if (login) {
+    login.style.display = v.btnLogin && v.btnLogin.visible === false ? 'none' : '';
+    if (v.btnLogin && v.btnLogin.label) login.textContent = v.btnLogin.label;
+  }
+  const statsEl = document.getElementById('heroStats');
+  if (statsEl && Array.isArray(v.stats)) {
+    statsEl.innerHTML = v.stats.map((s, i) =>
+      (i ? '<div class="stat-divider"></div>' : '') +
+      '<div class="stat"><span class="stat-num">' + escapeHtml(s.num) + '</span><span class="stat-label">' + escapeHtml(s.label) + '</span></div>'
+    ).join('');
+  }
+}
+function applyFeatures(v) {
+  if (!v) return;
+  const sec = document.querySelector('.features-section');
+  setSectionHeading(sec, v.label, v.titleBefore, v.titleGlow);
+  const grid = document.getElementById('featuresGrid');
+  if (grid && Array.isArray(v.cards)) {
+    grid.innerHTML = v.cards.map(c => '<div class="feature-card"><div class="feature-icon">' + (c.icon || '') + '</div><h3>' + escapeHtml(c.title) + '</h3><p>' + escapeHtml(c.desc) + '</p></div>').join('');
+  }
+}
+function applyBooking(v) {
+  if (!v) return;
+  const sec = sectionEl('booking');
+  setSectionHeading(sec, v.label, v.titleBefore, v.titleGlow);
+  const dt = document.getElementById('depositTitle');
+  if (dt && v.depositTitle) dt.textContent = v.depositTitle;
+  const dx = document.getElementById('depositText');
+  if (dx && v.depositText) dx.textContent = String(v.depositText).replace('{deposit}', _liveSettings.deposit || 50);
+  const sb = document.getElementById('bookingSubmit');
+  if (sb && v.submit) sb.textContent = v.submit;
+}
+function applyPrices(v) {
+  if (!v) return;
+  const sec = sectionEl('prices');
+  setSectionHeading(sec, v.label, v.titleBefore, v.titleGlow);
+  const grid = document.getElementById('pricesGrid');
+  if (!grid || !Array.isArray(v.cards)) return;
+  grid.innerHTML = v.cards.map(card => {
+    const variant = ['standard', 'vip', 'addons'].includes(card.variant) ? card.variant : '';
+    return '<div class="price-card ' + variant + '">' +
+      (card.crown ? '<div class="vip-crown">' + escapeHtml(card.crown) + '</div>' : '') +
+      '<div class="price-card-header"><span class="price-type-icon">' + (card.icon || '') + '</span><h3>' + escapeHtml(card.title) + '</h3></div>' +
+      '<div class="price-items">' + (card.rows || []).map(r =>
+        '<div class="price-row' + (r.featured ? ' featured' : '') + '"><span>' + escapeHtml(r.label) + '</span><span class="price-val">' + escapeHtml(r.prefix || '') + (r.price == null ? '' : r.price) + (r.suffix ? ' <small>' + escapeHtml(r.suffix) + '</small>' : '') + '</span></div>'
+      ).join('') + '</div></div>';
+  }).join('');
+}
+const _TIER_CLS = { bronze: 'bronze', silver: 'silver', gold: 'gold', diamond: 'diamond' };
+function applyOffers(v) {
+  if (!v) return;
+  const sec = sectionEl('offers');
+  setSectionHeading(sec, v.label, v.titleBefore, v.titleGlow);
+  const grid = document.getElementById('offersGrid');
+  if (!grid || !Array.isArray(v.cards)) return;
+  grid.innerHTML = v.cards.map(o => {
+    const tc = _TIER_CLS[String(o.tier || '').toLowerCase()] || '';
+    return '<div class="offer-card ' + tc + '">' +
+      '<div class="offer-badge ' + tc + '-badge">' + escapeHtml(o.badge) + '</div>' +
+      '<div class="offer-amount">' + escapeHtml(o.amount) + ' <span>' + escapeHtml(o.amountSuffix) + '</span></div>' +
+      '<div class="offer-desc">' + escapeHtml(o.desc) + '</div>' +
+      '<div class="offer-bonus"><span class="bonus-label">' + escapeHtml(o.bonusLabel) + '</span><span class="bonus-val">' + escapeHtml(o.bonus) + '</span></div>' +
+      '<div class="offer-total">Total Value: <strong>' + escapeHtml(o.total) + '</strong></div>' +
+      '<a href="javascript:void(0)" class="btn-offer ' + tc + '-btn membership-btn" data-tier="' + escapeAttr(o.tier) + '" data-amount="' + (o.amountData == null ? '' : o.amountData) + '" onclick="requestMembership(this)">' + escapeHtml(o.btn) + '</a>' +
+      '</div>';
+  }).join('');
+}
+function applyGames(v) {
+  if (!v) return;
+  const sec = sectionEl('games');
+  setSectionHeading(sec, v.label, v.titleBefore, v.titleGlow);
+  const tabs = Array.isArray(v.tabs) ? v.tabs : [];
+  for (const t of tabs) {
+    if (!t.id) continue;
+    const btn = document.querySelector('#gameTabs .tab-btn[data-tab="' + t.id + '"]');
+    if (btn && t.label != null) btn.textContent = (t.icon || '') + ' ' + t.label;
+    const panel = document.getElementById('tab-' + t.id);
+    const grid = panel ? panel.querySelector('.games-grid') : null;
+    if (grid && Array.isArray(t.games)) {
+      grid.innerHTML = t.games.map(g => {
+        const img = g.image ? '<img src="' + escapeAttr(g.image) + '" alt="' + escapeAttr(g.name) + '" class="game-img"/>' : '<span class="game-icon">' + (g.icon || '??') + '</span>';
+        return '<div class="game-card">' + img + '<span>' + escapeHtml(g.name) + '</span></div>';
+      }).join('');
+    }
+  }
+  // populate favorite-game dropdown from the library when it exists
+  const fav = document.getElementById('favGameSelect');
+  if (fav && tabs.length) {
+    const names = [];
+    tabs.forEach(t => (t.games || []).forEach(g => { if (g.name && !names.includes(g.name)) names.push(g.name); }));
+    if (names.length) {
+      const favH = JSON.stringify(names);
+      if (fav.dataset.list !== favH) {
+        fav.dataset.list = favH;
+        const cur = fav.value;
+        fav.innerHTML = '<option value="">� Select a game �</option>' + names.map(n => '<option>' + escapeHtml(n) + '</option>').join('') + '<option>Other</option>';
+        if (cur) fav.value = cur;
+      }
+    }
+  }
+}
+function applyContact(v) {
+  if (!v) return;
+  const sec = sectionEl('contact');
+  setSectionHeading(sec, v.label, v.titleBefore, v.titleGlow);
+  const card = document.getElementById('contactCard');
+  if (card && Array.isArray(v.items)) {
+    card.innerHTML = v.items.map(it => {
+      const icon = '<span class="contact-icon">' + (it.icon || '') + '</span>';
+      const body = '<div><strong>' + escapeHtml(it.title) + '</strong><span>' + escapeHtml(it.value) + '</span></div>';
+      if (it.type === 'link') {
+        const target = String(it.href || '').indexOf('tel:') === 0 ? '' : ' target="_blank"';
+        return '<a href="' + escapeAttr(it.href || '#') + '"' + target + ' class="contact-item">' + icon + body + '</a>';
+      }
+      return '<div class="contact-item no-link">' + icon + body + '</div>';
+    }).join('');
+  }
+  const mapEl = document.getElementById('mapLink');
+  if (mapEl && v.map && v.map.url) mapEl.setAttribute('href', v.map.url);
+  const mapImg = document.getElementById('mapImg');
+  if (mapImg && v.map && v.map.image) mapImg.src = v.map.image;
+}
+function applyFooter(v) {
+  if (!v) return;
+  const ft = document.getElementById('footerText');
+  if (ft) ft.textContent = v.text;
+  const links = document.getElementById('footerLinks');
+  if (links && Array.isArray(v.links)) {
+    links.innerHTML = v.links.map(l => '<a href="' + escapeAttr(l.href) + '">' + escapeHtml(l.label) + '</a>').join('');
+  }
+  const cp = document.getElementById('footerCopy');
+  if (cp) cp.textContent = v.copy;
+}
+function applySections(v) {
+  if (!v) return;
+  const hidden = Array.isArray(v.hidden) ? v.hidden : [];
+  const order = Array.isArray(v.order) && v.order.length ? v.order : ['features', 'booking', 'prices', 'offers', 'games', 'contact'];
+  const map = {
+    features: () => document.querySelector('.features-section'),
+    booking: () => sectionEl('booking'),
+    prices: () => sectionEl('prices'),
+    offers: () => sectionEl('offers'),
+    games: () => sectionEl('games'),
+    contact: () => sectionEl('contact'),
+  };
+  for (const id of Object.keys(map)) {
+    const el = map[id]();
+    if (!el) continue;
+    el.style.display = hidden.includes(id) ? 'none' : '';
+    document.querySelectorAll('#navbar a[href="#' + id + '"], #navMobile a[href="#' + id + '"]').forEach(a => { a.style.display = hidden.includes(id) ? 'none' : ''; });
+  }
+  // apply ordering (only when explicitly provided)
+  const els = order.map(id => map[id]()).filter(Boolean);
+  if (els.length > 1 && hidden.length === 0) {
+    const footer = document.querySelector('footer');
+    const frag = document.createDocumentFragment();
+    // sender is moved in order; keep the header wrapper at top
+    const wrapper = document.querySelector('div[data-section="home"]');
+    for (const el of els) frag.appendChild(el);
+    if (wrapper && wrapper.parentNode) wrapper.parentNode.insertBefore(frag, footer);
+    else document.body.insertBefore(frag, footer);
+  }
+}
+function applyContentSection(key) {
+  switch (key) {
+    case 'site': _memo('site', applySite); break;
+    case 'hero': _memo('hero', applyHero); break;
+    case 'features': _memo('features', applyFeatures); break;
+    case 'booking': _memo('booking', applyBooking); break;
+    case 'prices': _memo('prices', applyPrices); break;
+    case 'offers': _memo('offers', applyOffers); break;
+    case 'games': _memo('games', applyGames); break;
+    case 'contact': _memo('contact', applyContact); break;
+    case 'footer': _memo('footer', applyFooter); break;
+    case 'sections': _memo('sections', applySections); break;
+  }
+}
+function applyWebsiteContent() {
+  for (const k of ['site', 'hero', 'features', 'booking', 'prices', 'offers', 'games', 'contact', 'footer', 'sections']) applyContentSection(k);
+}
+function escapeAttr(s) { return String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+// ===== DYNAMIC PC GRID (devices added by admin appear here) =====
+async function renderPcGrid(devices) {
+  const grid = document.getElementById('pcGrid');
+  if (!grid) return;
+  const devs = devices || _deviceCache || [];
+  if (!devs.length) return;
+  const std = devs.filter(d => d.type === 'standard').map(d => d.pc);
+  const vip = devs.filter(d => d.type === 'vip').map(d => d.pc);
+  const hash = JSON.stringify({ std, vip });
+  if (grid.dataset.hash === hash) return;
+  grid.dataset.hash = hash;
+  const chip = (pc, cls) => '<label class="pc-chip' + cls + '"><input type="checkbox" value="' + escapeAttr(pc) + '"/> ' + escapeHtml(pc) + '</label>';
+  grid.innerHTML =
+    '<div class="pc-group-label">Standard</div>' + std.map(p => chip(p, '')).join('') +
+    (vip.length ? '<div class="pc-group-label vip">VIP ??</div>' + vip.map(p => chip(p, ' vip')).join('') : '');
+  updateConflictDisplay();
+}
