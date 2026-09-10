@@ -1028,6 +1028,187 @@ await assert('non-conflicting booking (later period) accepted', async () => {
     await api('PUT', '/api/settings', { points_std_per_hour: 10 }, adminToken);
   });
 
+  // ================= PART 6 =================
+  console.log('\n===== PART 6 · UNIFIED LIVE STATUS / CROSS-DEVICE SYNC / SCOPED EDITS / RESPONSIVE =====');
+  let tokenA2 = tokenA; // refreshed when device2 logs in (single active session per account)
+  // deterministic room: clear pending/active bookings + reset every device to available
+  serverMod.db.run("DELETE FROM bookings WHERE status IN ('pending','active')");
+  for (const pc of ['PC 1', 'PC 2', 'PC 3', 'PC 4', 'PC 7', 'PC 8', 'PC 9', 'PC 10', 'PC 11', 'PC 12', 'VIP 1', 'VIP 2']) {
+    serverMod.db.run("UPDATE devices SET status = 'available', manual_name = '' WHERE pc = ?", [pc]);
+  }
+  serverMod.db.persist();
+
+  await assert('live status is time-accurate: reservation start => RED instantly (no tick needed)', async () => {
+    const startMin = (nowTotalMinutes() + 1439) % 1440; // 1 min ago, wraps safely at 00:00
+    const startHH = String(Math.floor(startMin / 60)).padStart(2, '0') + ':' + String(startMin % 60).padStart(2, '0');
+    serverMod.db.run("INSERT INTO bookings (pcs, duration, addon, date, time, status, created_at) VALUES (?,?,?,?,?,?,?)", [
+      JSON.stringify(['PC 1']), 30, 'None', today(), startHH, 'pending', nowISO()
+    ]);
+    serverMod.db.persist();
+    const snap = await api('GET', '/api/devices?date=' + today());
+    const pc1 = snap.data.devices.find(d => d.pc === 'PC 1');
+    if (!pc1 || pc1.color !== 'red') throw new Error('PC1 expected instant RED, got ' + (pc1 && pc1.color + '/' + pc1.label));
+    const row = serverMod.db.q("SELECT status FROM bookings WHERE pcs = '[\"PC 1\"]' AND date = ? ORDER BY id DESC LIMIT 1", [today()])[0];
+    if (row.status !== 'pending') throw new Error('booking should still be pending (tick not needed for color)');
+  });
+
+  await assert('one snapshot holds GREEN / YELLOW / RED consistently (single source of truth)', async () => {
+    const fs = ftSlot(120);
+    const future = await api('POST', '/api/bookings', { pcs: ['PC 2'], duration: 60, date: fs.date, time: fs.time }, tokenA);
+    if (future.status !== 201) throw new Error('create future ' + future.status);
+    const snap = await api('GET', '/api/devices?date=' + fs.date);
+    const pc2 = snap.data.devices.find(d => d.pc === 'PC 2');
+    const pc3 = snap.data.devices.find(d => d.pc === 'PC 3');
+    if (!pc3 || pc3.color !== 'green') throw new Error('PC3 expected GREEN, got ' + (pc3 && pc3.color));
+    if (fs.date === today()) {
+      if (!pc2 || pc2.color !== 'yellow') throw new Error('PC2 expected YELLOW today, got ' + (pc2 && pc2.color));
+    } else if (!pc2 || pc2.color === 'red') {
+      throw new Error('PC2 should not be RED on a future day');
+    }
+    const snapToday = await api('GET', '/api/devices?date=' + today());
+    const pc1 = snapToday.data.devices.find(d => d.pc === 'PC 1');
+    if (!pc1 || pc1.color !== 'red') throw new Error('PC1 still expected RED, got ' + (pc1 && pc1.color));
+  });
+
+  // second WebSocket = a different "device" (mobile/laptop) sharing the same backend
+  const wsClient2 = new WebSocket('ws://127.0.0.1:' + PORT + '/ws');
+  await new Promise((res, rej) => { wsClient2.on('open', res); wsClient2.on('error', rej); });
+
+  await assert('admin manual busy/free => RED/GREEN broadcast to ALL devices (both WS clients)', async () => {
+    const ev1 = waitEvent(wsClient, 'devices_changed');
+    const ev2 = waitEvent(wsClient2, 'devices_changed');
+    const busy = await api('POST', '/api/devices/manual-busy', { pcs: ['PC 4'], name: 'Walk-in P6' }, adminToken);
+    if (busy.status !== 200) throw new Error('busy ' + busy.status);
+    await Promise.all([ev1, ev2]);
+    let snap = await api('GET', '/api/devices?date=' + today());
+    let d = snap.data.devices.find(x => x.pc === 'PC 4');
+    if (!d || d.color !== 'red' || !d.manual) throw new Error('PC4 not RED/manual: ' + JSON.stringify(d));
+    const ev3 = waitEvent(wsClient, 'devices_changed');
+    const ev4 = waitEvent(wsClient2, 'devices_changed');
+    const free = await api('POST', '/api/devices/manual-free', { pcs: ['PC 4'] }, adminToken);
+    if (free.status !== 200) throw new Error('free ' + free.status);
+    await Promise.all([ev3, ev4]);
+    snap = await api('GET', '/api/devices?date=' + today());
+    d = snap.data.devices.find(x => x.pc === 'PC 4');
+    if (!d || d.color !== 'green' || d.manual) throw new Error('PC4 not GREEN after free');
+  });
+
+  await assert('same account on another device: fresh login sees identical data + single active session', async () => {
+    const baseline = await api('GET', '/api/auth/me', null, tokenA);
+    const login2 = await api('POST', '/api/auth/login', { phone: '01000000001', password: 'pass1234' });
+    const tokenB = login2.data && login2.data.token;
+    if (!tokenB) throw new Error('login on device2 failed');
+    // design: one active session per account — old token is replaced, new device sees the SAME account data
+    const oldMe = await api('GET', '/api/auth/me', null, tokenA);
+    if (oldMe.status !== 401) throw new Error('expected old session invalidated, got ' + oldMe.status);
+    const patch = await api('PATCH', '/api/accounts/1', { favorite_game: 'VALORANT' }, tokenB);
+    if (patch.status !== 200) throw new Error('patch favorite ' + patch.status);
+    const meB = await api('GET', '/api/auth/me', null, tokenB);
+    if (meB.data.account.favorite_game !== 'VALORANT') throw new Error('device2 did not see favorite_game');
+    if (meB.data.account.balance !== baseline.data.account.balance || meB.data.account.points !== baseline.data.account.points) {
+      throw new Error('balance/points differ across devices (should be shared)');
+    }
+    const adm2 = await api('GET', '/api/accounts', null, adminToken);
+    const a1b = adm2.data.accounts.find(a => a.id === 1);
+    if (a1b.favorite_game !== 'VALORANT') throw new Error('admin did not see favorite_game');
+    tokenA2 = tokenB; // device2 session used for the next cross-device booking test
+  });
+
+  await assert('mobile booking => visible to admin + bookings_changed reaches BOTH devices', async () => {
+    const ev1 = waitEvent(wsClient, 'bookings_changed');
+    const ev2 = waitEvent(wsClient2, 'bookings_changed');
+    const fs = ftSlot(150);
+    const r = await api('POST', '/api/bookings', { pcs: ['PC 7'], duration: 60, date: fs.date, time: fs.time }, tokenA2);
+    if (r.status !== 201) throw new Error('create ' + r.status + ' ' + JSON.stringify(r.data).slice(0, 160));
+    await Promise.all([ev1, ev2]);
+    const adm = await api('GET', '/api/bookings', null, adminToken);
+    if (!adm.data.bookings.some(b => b.id === r.data.booking.id)) throw new Error('admin bookings missing the new one');
+  });
+
+  await assert('scoped edit: change ONE game icon => siblings + every other section unchanged', async () => {
+    const c0 = (await api('GET', '/api/content')).data.content;
+    const games0 = JSON.parse(JSON.stringify(c0.games));
+    const online0 = () => games0.tabs.find(t => t.id === 'online').games;
+    const iMr = online0().findIndex(g => g.name === 'Marvel Rivals');
+    if (iMr < 0) throw new Error('Marvel Rivals not found');
+    online0()[iMr].icon = '👑';
+    const put = await api('PUT', '/api/content/games', games0, adminToken);
+    if (put.status !== 200) throw new Error('put games ' + put.status + ' ' + JSON.stringify(put.data).slice(0, 200));
+    const aft = (await api('GET', '/api/content')).data.content;
+    if (aft.games.tabs.find(t => t.id === 'online').games[iMr].icon !== '👑') throw new Error('icon change not applied');
+    // everything except the single changed icon must be byte-identical to the PUT payload
+    if (JSON.stringify(aft.games) !== JSON.stringify(games0)) throw new Error('games payload changed beyond the single icon edit');
+    for (const k of ['prices', 'offers', 'features', 'contact', 'footer', 'sections']) {
+      if (JSON.stringify(aft[k]) !== JSON.stringify(c0[k])) throw new Error('section "' + k + '" changed by games edit');
+    }
+  });
+
+  await assert('scoped remove: delete ONLY Call of Duty => others + icons intact', async () => {
+    const cur = (await api('GET', '/api/content')).data.content.games;
+    const gamesR = JSON.parse(JSON.stringify(cur));
+    const onlineR = gamesR.tabs.find(t => t.id === 'online').games;
+    const iCod = onlineR.findIndex(g => g.name === 'Call of Duty');
+    if (iCod < 0) throw new Error('Call of Duty not found');
+    const expected = JSON.parse(JSON.stringify(gamesR));
+    expected.tabs.find(t => t.id === 'online').games.splice(iCod, 1);
+    onlineR.splice(iCod, 1);
+    const put = await api('PUT', '/api/content/games', gamesR, adminToken);
+    if (put.status !== 200) throw new Error('put games ' + put.status);
+    const aft = (await api('GET', '/api/content')).data.content.games;
+    if (JSON.stringify(aft) !== JSON.stringify(expected)) throw new Error('non-target games changed after single remove');
+    if (aft.tabs.find(t => t.id === 'online').games.some(g => g.name === 'Call of Duty')) throw new Error('Call of Duty still present');
+  });
+
+  await assert('scoped add: append ONE game => existing tabs unchanged', async () => {
+    const cur = (await api('GET', '/api/content')).data.content.games;
+    const gamesA = JSON.parse(JSON.stringify(cur));
+    gamesA.tabs.find(t => t.id === 'offline').games.push({ name: 'PART6 New Game', icon: '🎯', image: '' });
+    const put = await api('PUT', '/api/content/games', gamesA, adminToken);
+    if (put.status !== 200) throw new Error('put games ' + put.status);
+    const aft = (await api('GET', '/api/content')).data.content.games;
+    const off = aft.tabs.find(t => t.id === 'offline').games;
+    if (off[off.length - 1].name !== 'PART6 New Game') throw new Error('added game missing');
+    if (off.filter(g => g.name === 'PART6 New Game').length !== 1) throw new Error('added game duplicated');
+    const cmp = JSON.parse(JSON.stringify(aft));
+    cmp.tabs.find(t => t.id === 'offline').games.pop();
+    if (JSON.stringify(cmp) !== JSON.stringify(cur)) throw new Error('existing games changed by append');
+  });
+
+  console.log('\n===== PART 6 · REGRESSION GUARDS (source-level) =====');
+  const src = fs.readFileSync(path.join(__dirname, 'script.js'), 'utf8');
+  const htmlIdx = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8');
+
+  await assert('public site keeps a single Live Status bar (occupiedPCs) fed by the same backend', () => {
+    if (!htmlIdx.includes('id="occupiedPCs"')) throw new Error('live status element missing on public site');
+    if (!src.includes("getElementById('occupiedPCs')")) throw new Error('Live Status not wired to script');
+  });
+  await assert('script opens exactly ONE websocket and reconnects without duplicate listeners', () => {
+    if ((src.match(/new WebSocket\(WS_URL\)/g) || []).length !== 1) throw new Error('duplicate WS connections');
+    if ((src.match(/connectRealtime\(\);/g) || []).length !== 1) throw new Error('connectRealtime called more than once');
+  });
+  await assert('WS reconnect resyncs latest state (devices + bookings) on open', () => {
+    if (!/_ws\.onopen[\s\S]{0,400}refreshDevices\(\);/.test(src)) throw new Error('onopen does not resync devices');
+    if (!/refreshDevices\(\);[\s\S]{0,80}getBookings\(\)\.then\(\(\) => updateConflictDisplay\(\)\);/.test(src)) throw new Error('onopen does not resync bookings');
+  });
+  await assert('single 20s fallback poll (not a polling storm)', () => {
+    const fallback = src.match(/refreshDevices\(\); getBookings\(\)\.then\(\(\) => updateConflictDisplay\(\)\); }, 20000\);/g) || [];
+    if (fallback.length !== 1) throw new Error('found ' + fallback.length + ' fallback poll intervals');
+  });
+  await assert('mobile breakpoints exist and never hide booking/live-status controls', () => {
+    const mqs = css.match(/@media \(max-width:/g) || [];
+    if (mqs.length < 3) throw new Error('only ' + mqs.length + ' media queries');
+    for (const sel of ['.booking-form', '.occupied-bar', '.occupied-pcs', '.pc-grid']) {
+      const re = new RegExp('\\' + sel.replace(/\./g, '\\.') + '\\s*\\{[^\\}]*display:\\s*none', 'i');
+      if (re.test(css)) throw new Error(sel + ' hidden on mobile');
+    }
+  });
+  await assert('admin settings keep username/password change + login with credentials', () => {
+    const adm = fs.readFileSync(path.join(__dirname, 'admin.html'), 'utf8');
+    if (!adm.includes('setAdminUser') || !adm.includes('setAdminPass')) throw new Error('admin credential fields missing');
+    if (!adm.includes('admin_user') || !adm.includes('admin_pass')) throw new Error('admin credential API fields missing');
+  });
+
   console.log('\n================ RESULT ================');
   console.log('PASSED: ' + passed + '   FAILED: ' + failed);
   try { wsClient.close(); } catch {}

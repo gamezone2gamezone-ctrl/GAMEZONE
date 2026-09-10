@@ -577,7 +577,13 @@ case 'bookings_changed':
 
 function connectRealtime() {
   try { _ws = new WebSocket(WS_URL); } catch { scheduleReconnect(); return; }
-  _ws.onopen = () => { _wsReconnectDelay = 2000; };
+  _ws.onopen = () => {
+    _wsReconnectDelay = 2000;
+    // resync latest server state immediately after (re)connect so shared
+    // device status + bookings stay consistent even if messages were missed
+    refreshDevices();
+    getBookings().then(() => updateConflictDisplay());
+  };
   _ws.onmessage = e => {
     let m;
     try { m = JSON.parse(e.data); } catch { return; }
